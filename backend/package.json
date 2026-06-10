@@ -1,13 +1,8 @@
 {
   "name": "momo-loan-uganda-backend",
   "version": "1.0.0",
-  "description": "Backend server for Uganda MoMo Loan System",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js"
-  },
-  "engines": {
-    "node": "18.x"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -18,6 +13,7 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "express-session": "^1.17.3"
+    "express-session": "^1.17.3",
+    "node-fetch": "^2.7.0"
   }
 }
