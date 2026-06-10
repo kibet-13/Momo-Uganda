@@ -1,6 +1,8 @@
 {
   "name": "momo-loan-uganda-backend",
   "version": "1.0.0",
+  "description": "Backend server for Uganda MoMo Loan System",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
