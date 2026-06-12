@@ -1,7 +1,7 @@
 {
   "name": "momo-uganda-backend",
   "version": "1.0.0",
-  "description": "Backend for MoMo Uganda Loan System",
+  "description": "Backend for MoMo Uganda Loan System with Telegram 4 Buttons",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
