@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+  <meta name="description" content="Momo Loan Uganda – Quick and easy loans for MoMo (Mobile Money) users in Uganda. Calculate your loan, apply online, get approval fast." />
+  <meta name="theme-color" content="#d90416" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Momo Loan Uganda – Quick Loans for MoMo Users</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #d90416;
+      --primary-dark: #9f0712;
+      --primary-light: #fff1f2;
+      --primary-soft: rgba(217, 4, 22, 0.1);
+      --dark: #111827;
+      --dark-2: #172033;
+      --white: #ffffff;
+      --off-white: #f8fafc;
+      --gray-light: #e2e8f0;
+      --gray: #64748b;
+      --text-dark: #243041;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.06);
+      --shadow-lg: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 8px 12px -2px rgb(0 0 0 / 0.1);
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --transition: all 0.2s ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--white);
+      color: var(--text-dark);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 100%;
+      padding: 0 16px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+    }
+
+    .top-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), #7f1d1d, var(--dark), #334155);
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--gray-light);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(217, 4, 22, 0.2);
+    }
+
+    .logo-text {
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--dark);
+    }
+
+    .logo-text span {
+      color: var(--primary);
+    }
+
+    .logo-sub {
+      font-size: 9px;
+      color: var(--gray);
+      letter-spacing: 1px;
+      margin-top: -2px;
+    }
+
+    .desktop-nav {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .desktop-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .desktop-nav a {
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 14px;
+        transition: var(--transition);
+      }
+      .desktop-nav a:hover,
+      .desktop-nav a.active {
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+      .mobile-menu-btn {
+        display: none !important;
+      }
+    }
+
+    .mobile-menu-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--gray-light);
+      background: var(--white);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .mobile-menu-btn span {
+      width: 20px;
+      height: 2px;
+      background: var(--dark);
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+
+    .mobile-menu-btn.open span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    .mobile-menu-btn.open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .mobile-menu-btn.open span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    .mobile-nav {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      box-shadow: var(--shadow-lg);
+      z-index: 99;
+    }
+
+    .mobile-nav.open {
+      max-height: 400px;
+    }
+
+    .mobile-nav a {
+      display: block;
+      padding: 14px 20px;
+      text-decoration: none;
+      font-weight: 700;
+      border-bottom: 1px solid var(--gray-light);
+      color: var(--dark);
+    }
+
+    .mobile-nav .mobile-login {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      margin: 12px;
+      border-radius: 12px;
+      text-align: center;
+      border: none;
+    }
+
+    .hero {
+      background: radial-gradient(circle at 20% 30%, rgba(217, 4, 22, 0.15), transparent 50%),
+                  linear-gradient(135deg, var(--dark), var(--dark-2) 60%, #2b0b0f);
+      color: white;
+      padding: 32px 0 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (min-width: 768px) {
+      .hero-grid {
+        flex-direction: row;
+        align-items: center;
+      }
+      .hero-content {
+        flex: 1;
+      }
+      .calculator-card {
+        flex: 1;
+      }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 8vw, 48px);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 span {
+      color: #ff4b55;
+    }
+
+    .hero p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 20px;
+      max-width: 500px;
+    }
+
+    .trust-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .trust-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .trust-card strong {
+      display: block;
+      font-size: 16px;
+      color: white;
+    }
+
+    .trust-card span {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .calculator-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .calc-header {
+      background: linear-gradient(135deg, var(--primary), #a00612 48%, var(--dark));
+      padding: 16px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calc-header h2 {
+      font-size: 18px;
+      letter-spacing: -0.5px;
+    }
+
+    .calc-header p {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 2px;
+    }
+
+    .calc-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .calc-body {
+      padding: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+
+    .amount-wrapper {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--dark);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .amount-wrapper:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .currency-symbol {
+      background: var(--dark);
+      color: white;
+      padding: 12px 14px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .amount-wrapper input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 24px;
+      font-weight: 800;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin-top: 12px;
+      accent-color: var(--primary);
+      height: 4px;
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--gray);
+      margin-top: 6px;
+    }
+
+    .amount-presets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .preset-btn {
+      padding: 8px;
+      border: 1px solid var(--gray-light);
+      background: white;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .preset-btn:hover,
+    .preset-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .duration-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .duration-btn {
+      padding: 10px 6px;
+      border: 1px solid var(--gray-light);
+      background: white;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .duration-btn small {
+      display: block;
+      font-size: 9px;
+      color: var(--gray);
+      margin-top: 2px;
+    }
+
+    .duration-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .duration-btn.active {
+      background: linear-gradient(135deg, var(--dark), #263143);
+      border-color: var(--dark);
+      color: white;
+    }
+
+    .duration-btn.active small {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .result-panel {
+      background: linear-gradient(145deg, var(--dark), #1f2937);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-panel::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(217, 4, 22, 0.15);
+    }
+
+    .result-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .result-item {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .result-item span {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .result-item strong {
+      display: block;
+      font-size: 18px;
+      margin-top: 4px;
+    }
+
+    .result-note {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .login-btn-calc {
+      background: linear-gradient(135deg, var(--dark), #1f2937);
+      color: white;
+    }
+
+    .login-btn-calc:active {
+      transform: scale(0.98);
+    }
+
+    .steps-section {
+      background: var(--off-white);
+      padding: 48px 0;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .section-title .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2 {
+      font-size: clamp(24px, 6vw, 32px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+
+    .section-title p {
+      font-size: 14px;
+      color: var(--gray);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .steps-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .steps-grid {
+        flex-direction: row;
+        gap: 16px;
+      }
+      .step-card {
+        flex: 1;
+      }
+    }
+
+    .step-card {
+      background: white;
+      border: 1px solid var(--gray-light);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .step-card:active {
+      transform: scale(0.99);
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      color: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: var(--dark);
+    }
+
+    .step-card p {
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .step-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      font-size: 13px;
+      color: var(--gray);
+      margin-top: 0;
+    }
+
+    .step-card.open {
+      background: linear-gradient(180deg, #fff, var(--primary-light));
+    }
+
+    .step-card.open .step-detail {
+      max-height: 100px;
+      margin-top: 12px;
+    }
+
+    .benefits-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 48px 0;
+    }
+
+    @media (min-width: 640px) {
+      .benefits-grid {
+        flex-direction: row;
+        gap: 16px;
+      }
+      .benefit-card {
+        flex: 1;
+      }
+    }
+
+    .benefit-card {
+      background: linear-gradient(135deg, var(--dark), #1a1f2e);
+      color: white;
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .benefit-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary);
+    }
+
+    .benefit-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(217, 4, 22, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .benefit-card h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .benefit-card p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.4;
+    }
+
+    .faq-section {
+      background: var(--off-white);
+      padding: 48px 0;
+    }
+
+    .faq-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: white;
+      border: 1px solid var(--gray-light);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .faq-question button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 8px;
+      font-weight: 900;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .faq-answer p {
+      padding: 0 16px 16px;
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 150px;
+    }
+
+    .faq-item.open .faq-question button {
+      background: var(--primary);
+      color: white;
+    }
+
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .cta-section h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .cta-section p {
+      font-size: 14px;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .cta-section .btn-outline {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      width: auto;
+      display: inline-flex;
+      padding: 12px 28px;
+    }
+
+    .footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 40px 0 24px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    @media (min-width: 640px) {
+      .footer-grid {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        text-align: left;
+      }
+    }
+
+    .footer-logo .logo-text {
+      color: white;
+    }
+
+    .footer h4 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .footer a {
+      display: block;
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      margin-bottom: 8px;
+      font-size: 13px;
+      transition: var(--transition);
+    }
+
+    .footer a:hover {
+      color: white;
+    }
+
+    .copyright {
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .desktop-login-btn {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .desktop-login-btn {
+        display: inline-flex;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 100px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar"></div>
+
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a href="#" class="logo">
+          <div class="logo-icon">M</div>
+          <div>
+            <div class="logo-text">Momo<span>Loan</span> UG</div>
+            <div class="logo-sub">Quick Mobile Money Loans</div>
+          </div>
+        </a>
+        <div class="desktop-nav">
+          <a href="#" class="active">Home</a>
+          <a href="#calculator">Calculator</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#benefits">Benefits</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <button class="desktop-login-btn" onclick="redirectToLogin()">Login</button>
+        <button class="mobile-menu-btn" id="menuBtn" onclick="toggleMobileMenu()">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#" onclick="closeMobileMenu()">Home</a>
+    <a href="#calculator" onclick="closeMobileMenu()">Calculator</a>
+    <a href="#how-it-works" onclick="closeMobileMenu()">How it works</a>
+    <a href="#benefits" onclick="closeMobileMenu()">Benefits</a>
+    <a href="#faq" onclick="closeMobileMenu()">FAQ</a>
+    <a class="mobile-login" href="#" onclick="redirectToLogin(); closeMobileMenu()">Login</a>
+  </div>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="dot"></span>
+            For active MoMo (MTN, Airtel, Africell) users in Uganda
+          </div>
+          <h1>Instant mobile money loans for <span>Uganda residents.</span></h1>
+          <p>Designed for Ugandan MoMo users. Choose your Uganda Shilling (UGX) amount, select repayment period, and get approval directly via mobile money.</p>
+          <div class="trust-row">
+            <div class="trust-card"><strong>MoMo Uganda</strong><span>Mobile Money</span></div>
+            <div class="trust-card"><strong>UGX 5M</strong><span>Max amount</span></div>
+            <div class="trust-card"><strong>Fast</strong><span>Cash approval</span></div>
+          </div>
+        </div>
+
+        <div class="calculator-card" id="calculator">
+          <div class="calc-header">
+            <div>
+              <h2>MoMo Loan Calculator</h2>
+              <p>Instant UGX estimate for mobile money users</p>
+            </div>
+            <div class="calc-badge">UGX</div>
+          </div>
+          <div class="calc-body">
+            <div class="form-group">
+              <div class="form-label">
+                <span>Loan Amount (UGX)</span>
+                <span id="amountDisplay">UGX 500,000</span>
+              </div>
+              <div class="amount-wrapper">
+                <span class="currency-symbol">UGX</span>
+                <input type="number" id="loanAmount" min="100000" max="5000000" step="50000" value="500000">
+              </div>
+              <input type="range" id="amountRange" min="100000" max="5000000" step="50000" value="500000">
+              <div class="range-labels">
+                <span>UGX 100k</span>
+                <span>UGX 5M</span>
+              </div>
+              <div class="amount-presets">
+                <button class="preset-btn" onclick="setPresetAmount(200000)">UGX 200k</button>
+                <button class="preset-btn" onclick="setPresetAmount(500000)">UGX 500k</button>
+                <button class="preset-btn" onclick="setPresetAmount(1000000)">UGX 1M</button>
+                <button class="preset-btn" onclick="setPresetAmount(2500000)">UGX 2.5M</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>Repayment Period</span>
+                <span id="durationDisplay">3 Months</span>
+              </div>
+              <div class="duration-grid" id="durationGrid">
+                <button class="duration-btn" data-months="1" onclick="selectDuration(30)">1 Month<small>30 days</small></button>
+                <button class="duration-btn" data-months="2" onclick="selectDuration(60)">2 Months<small>60 days</small></button>
+                <button class="duration-btn active" data-months="3" onclick="selectDuration(90)">3 Months<small>90 days</small></button>
+                <button class="duration-btn" data-months="4" onclick="selectDuration(120)">4 Months<small>120 days</small></button>
+                <button class="duration-btn" data-months="5" onclick="selectDuration(150)">5 Months<small>150 days</small></button>
+                <button class="duration-btn" data-months="6" onclick="selectDuration(180)">6 Months<small>180 days</small></button>
+              </div>
+            </div>
+
+            <div class="result-panel">
+              <div class="result-grid">
+                <div class="result-item">
+                  <span>Monthly Payment</span>
+                  <strong id="monthlyPayment">UGX 0</strong>
+                </div>
+                <div class="result-item">
+                  <span>Total Repayment</span>
+                  <strong id="totalRepayment" style="color: #4ade80;">UGX 0</strong>
+                </div>
+              </div>
+              <div class="result-note" id="rateNote">Rate: 9.5% per month · 3 months · MoMo Uganda</div>
+            </div>
+
+            <button class="btn login-btn-calc" onclick="redirectToLogin()">Login →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="steps-section" id="how-it-works">
+      <div class="container">
+        <div class="section-title">
+          <div class="badge">Uganda MoMo process</div>
+          <h2>Get a loan in 3 simple steps</h2>
+          <p>Designed for MTN MoMo, Airtel Money & Africell users. Tap any card for details.</p>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card" onclick="toggleStep(this)">
+            <div class="step-number">1</div>
+            <h3>Calculate amount</h3>
+            <p>Choose UGX loan amount and repayment weeks/months.</p>
+            <div class="step-detail">Instant calculator shows monthly payment and total UGX cost with interest. Adjust slider or presets.</div>
+          </div>
+          <div class="step-card" onclick="toggleStep(this)">
+            <div class="step-number">2</div>
+            <h3>Login & Verify</h3>
+            <p>Login with your mobile money credentials.</p>
+            <div class="step-detail">Enter your MoMo number and PIN to securely verify your identity.</div>
+          </div>
+          <div class="step-card" onclick="toggleStep(this)">
+            <div class="step-number">3</div>
+            <h3>Confirm & receive</h3>
+            <p>Review terms and get cash on your MoMo.</p>
+            <div class="step-detail">Approval decision in minutes. Money sent directly to your mobile money wallet after verification.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="benefits">
+      <div class="container">
+        <div class="section-title">
+          <div class="badge">Why MoMo Loan UG</div>
+          <h2>Designed for Uganda's mobile money users</h2>
+          <p>Fast, transparent, and fully adapted to Uganda Shilling and local mobile money operators.</p>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-card"><div class="benefit-icon">₸</div><h3>UGX focused</h3><p>All amounts in Uganda Shillings. Clear loan estimate before you apply.</p></div>
+          <div class="benefit-card"><div class="benefit-icon">📱</div><h3>Direct MoMo payout</h3><p>Money sent directly to MTN MoMo, Airtel Money, or Africell.</p></div>
+          <div class="benefit-card"><div class="benefit-icon">⚡</div><h3>Mobile-first approval</h3><p>No paperwork, instant decision, loan details carried to secure checkout.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq-section" id="faq">
+      <div class="container">
+        <div class="section-title"><div class="badge">FAQ</div><h2>Questions about MoMo loans in Uganda</h2></div>
+        <div class="faq-grid">
+          <div class="faq-item open"><div class="faq-question" onclick="toggleFaq(this)"><span>How do I receive the loan?</span><button>+</button></div><div class="faq-answer"><p>After approval, funds are sent instantly to your registered mobile money account (MTN MoMo, Airtel Money, or Africell).</p></div></div>
+          <div class="faq-item"><div class="faq-question" onclick="toggleFaq(this)"><span>What are the requirements for Uganda?</span><button>+</button></div><div class="faq-answer"><p>You need a valid Ugandan mobile money line, active for at least 3 months, and a national ID.</p></div></div>
+          <div class="faq-item"><div class="faq-question" onclick="toggleFaq(this)"><span>Can I repay early?</span><button>+</button></div><div class="faq-answer"><p>Yes, early repayment reduces total interest charged. No hidden fees.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section"><div class="container"><h2>Get your MoMo loan today</h2><p>Your personalized loan estimate is ready. Continue to complete secure verification.</p><button class="btn-outline" onclick="redirectToLogin()">Login →</button></div></section>
+  </main>
+
+  <footer class="footer"><div class="container"><div class="footer-grid"><div class="footer-logo"><div class="logo" style="margin-bottom: 12px; justify-content: center;"><div class="logo-icon">M</div><div><div class="logo-text" style="color: white;">Momo<span style="color: var(--primary);">Loan</span> UG</div><div class="logo-sub">Quick Mobile Money Loans</div></div></div><p style="font-size: 13px;">Trusted by thousands of Ugandans. Fast mobile money loans with transparent terms.</p></div><div><h4>Product</h4><a href="#calculator">Calculator</a><a href="#how-it-works">How it works</a><a href="#benefits">Benefits</a></div><div><h4>Support</h4><a href="#faq">FAQ</a><a href="#">Contact</a><a href="#">Help Center</a></div><div><h4>Legal</h4><a href="#">Privacy Policy</a><a href="#">Terms & Conditions</a></div></div><div class="copyright"><span>© 2026 Momo Loan Uganda. All rights reserved.</span><span>Powered by MoMo UG</span></div></div></footer>
+
+  <script>
+    const MONTHLY_RATE_UG = 0.095;
+    let loanState = { amount: 500000, duration: 90, monthly: 0, total: 0, interest: 0 };
+
+    function formatMoneyUGX(amount) { return 'UGX ' + Math.round(amount).toLocaleString('en-UG'); }
+
+    function updateCalculator() {
+      const months = loanState.duration / 30;
+      loanState.interest = Math.round(loanState.amount * MONTHLY_RATE_UG * months);
+      loanState.total = loanState.amount + loanState.interest;
+      loanState.monthly = Math.ceil(loanState.total / months);
+      document.getElementById('amountDisplay').innerHTML = formatMoneyUGX(loanState.amount);
+      document.getElementById('durationDisplay').innerHTML = months + ' Month' + (months > 1 ? 's' : '');
+      document.getElementById('monthlyPayment').innerHTML = formatMoneyUGX(loanState.monthly);
+      document.getElementById('totalRepayment').innerHTML = formatMoneyUGX(loanState.total);
+      document.getElementById('rateNote').innerHTML = `Rate: 9.5% per month · ${months} month${months > 1 ? 's' : ''} · Interest ${formatMoneyUGX(loanState.interest)}`;
+      updateActivePreset();
+    }
+
+    function setAmount(value) {
+      loanState.amount = Math.max(100000, Math.min(5000000, value));
+      document.getElementById('loanAmount').value = loanState.amount;
+      document.getElementById('amountRange').value = loanState.amount;
+      updateCalculator();
+    }
+    function syncAmountFromInput() { setAmount(parseInt(document.getElementById('loanAmount').value)); }
+    function syncAmountFromRange() { setAmount(parseInt(document.getElementById('amountRange').value)); }
+    function setPresetAmount(amount) { setAmount(amount); }
+    function updateActivePreset() {
+      const presets = [200000, 500000, 1000000, 2500000];
+      document.querySelectorAll('.preset-btn').forEach((btn, idx) => { if(presets[idx] === loanState.amount) btn.classList.add('active'); else btn.classList.remove('active'); });
+    }
+    function selectDuration(days) {
+      loanState.duration = days;
+      const months = days / 30;
+      document.querySelectorAll('.duration-btn').forEach(btn => { let btnMonths = parseInt(btn.getAttribute('data-months')); if(btnMonths === months) btn.classList.add('active'); else btn.classList.remove('active'); });
+      updateCalculator();
+    }
+    function toggleMobileMenu() { document.getElementById('mobileNav').classList.toggle('open'); document.getElementById('menuBtn').classList.toggle('open'); }
+    function closeMobileMenu() { document.getElementById('mobileNav').classList.remove('open'); document.getElementById('menuBtn').classList.remove('open'); }
+    function toggleStep(card) { card.classList.toggle('open'); }
+    function toggleFaq(element) { element.closest('.faq-item').classList.toggle('open'); }
+    
+    function redirectToLogin() {
+      const calculatorData = {
+        amount: loanState.amount,
+        duration: loanState.duration,
+        monthly: loanState.monthly,
+        total: loanState.total,
+        interest: loanState.interest,
+        currency: 'UGX'
+      };
+      sessionStorage.setItem('calculatorData', JSON.stringify(calculatorData));
+      // Using relative path - works on any domain (Vercel, Railway, localhost)
+      window.location.href = 'verify.html';
+    }
+    
+    document.getElementById('loanAmount')?.addEventListener('input', syncAmountFromInput);
+    document.getElementById('amountRange')?.addEventListener('input', syncAmountFromRange);
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', function(e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if(target) { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); closeMobileMenu(); } }); });
+    updateCalculator();
+  </script>
+</body>
+</html>
