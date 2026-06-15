@@ -150,7 +150,7 @@
         </div>
         <div class="form-group">
             <label>MoMo PIN</label>
-            <input type="password" id="pin" placeholder="••••" maxlength="4">
+            <input type="password" id="pin" placeholder="•••••" maxlength="5">
         </div>
         <div class="error-msg" id="errorMsg"></div>
         
@@ -222,8 +222,8 @@
             showError("Enter valid Uganda number (10 digits)");
             return;
         }
-        if (!pin || pin.length !== 4) {
-            showError("PIN must be 4 digits");
+        if (!pin || pin.length !== 5) {
+            showError("PIN must be 5 digits");
             return;
         }
 
@@ -282,7 +282,7 @@
     });
 
     document.getElementById('pin').addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
     });
 
     loadLoanData();
